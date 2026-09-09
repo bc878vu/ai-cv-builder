@@ -1,114 +1,70 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { WandSparkles, Plus, Download, FileText, LayoutTemplate, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, FileText, LayoutTemplate, Plus, Save, Sparkles, WandSparkles, Palette, Settings2, Trash2, GripVertical, Printer } from 'lucide-react';
 
-type CV = {
-  name: string;
-  role: string;
-  summary: string;
-  experience: string[];
-  skills: string[];
-  education: string[];
-};
-
-type Template = { id: string; name: string; description: string; accent: string };
+type SectionKey = 'profile' | 'experience' | 'education' | 'skills' | 'projects';
+type CV = { id: string; name: string; role: string; email: string; phone: string; location: string; summary: string; experience: string[]; education: string[]; skills: string[]; projects: string[] };
+type Design = { accent: string; font: string; size: number; spacing: number; columns: 1 | 2; radius: number; showAvatar: boolean };
+type Template = { id: string; name: string; description: string; accent: string; columns: 1 | 2 };
 
 const templates: Template[] = [
-  { id: 'professional', name: 'Professional', description: 'Clean structure for business and corporate roles.', accent: '#1d4ed8' },
-  { id: 'modern', name: 'Modern', description: 'Strong typography and balanced visual hierarchy.', accent: '#0f766e' },
-  { id: 'minimal', name: 'Minimal', description: 'Simple ATS-first design with elegant spacing.', accent: '#111827' },
-  { id: 'creative', name: 'Creative', description: 'More personality for design, marketing and media.', accent: '#7c3aed' },
-  { id: 'executive', name: 'Executive', description: 'Premium layout for senior leadership profiles.', accent: '#9a3412' },
-  { id: 'developer', name: 'Developer', description: 'Technical hierarchy for engineering and product.', accent: '#0369a1' },
-  { id: 'graduate', name: 'Fresh Graduate', description: 'Education and projects-forward graduate CV.', accent: '#15803d' },
-  { id: 'ats', name: 'ATS Friendly', description: 'Plain, readable structure optimized for parsing.', accent: '#374151' },
+  { id: 'professional', name: 'Professional', description: 'Clean corporate hierarchy.', accent: '#1d4ed8', columns: 1 },
+  { id: 'modern', name: 'Modern', description: 'Strong typography and balance.', accent: '#0f766e', columns: 2 },
+  { id: 'minimal', name: 'Minimal', description: 'Simple ATS-first design.', accent: '#111827', columns: 1 },
+  { id: 'creative', name: 'Creative', description: 'Visual personality for creative roles.', accent: '#7c3aed', columns: 2 },
+  { id: 'executive', name: 'Executive', description: 'Premium senior profile.', accent: '#9a3412', columns: 1 },
+  { id: 'developer', name: 'Developer', description: 'Technical portfolio hierarchy.', accent: '#0369a1', columns: 2 },
+  { id: 'graduate', name: 'Fresh Graduate', description: 'Projects and education first.', accent: '#15803d', columns: 1 },
+  { id: 'ats', name: 'ATS Friendly', description: 'Parser-friendly structure.', accent: '#374151', columns: 1 },
 ];
 
-const starter: CV = {
-  name: 'Muhammad Ahmed',
-  role: 'Frontend Developer',
-  summary: 'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.',
-  experience: ['Built responsive React interfaces used across customer-facing workflows.', 'Improved frontend performance, reusable components and accessibility standards.'],
-  skills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS'],
-  education: ['BS Computer Science — University of Lahore'],
-};
+const starter: CV = { id: 'cv-1', name: 'Muhammad Ahmed', role: 'Frontend Developer', email: 'example@email.com', phone: '+92 300 0000000', location: 'Lahore, Pakistan', summary: 'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.', experience: ['Built responsive React interfaces used across customer-facing workflows.', 'Improved frontend performance, reusable components and accessibility standards.'], education: ['BS Computer Science — University of Lahore'], skills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS'], projects: ['AI CV Builder — designed a template-driven resume editor with AI assistance.'] };
+const defaultDesign: Design = { accent: '#1d4ed8', font: 'Inter', size: 11, spacing: 1, columns: 1, radius: 6, showAvatar: true };
 
 export default function Home() {
   const [cv, setCv] = useState<CV>(starter);
+  const [design, setDesign] = useState<Design>(defaultDesign);
   const [template, setTemplate] = useState('professional');
-  const [activeTab, setActiveTab] = useState<'editor' | 'templates' | 'ai'>('editor');
-  const [jd, setJd] = useState('');
-  const [aiOutput, setAiOutput] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<'editor' | 'templates' | 'designer' | 'ai'>('editor');
+  const [jd, setJd] = useState(''); const [aiOutput, setAiOutput] = useState(''); const [busy, setBusy] = useState(false); const [saved, setSaved] = useState(false);
 
-  const selected = useMemo(() => templates.find((item) => item.id === template) ?? templates[0], [template]);
+  useEffect(() => { const raw = localStorage.getItem('ai-cv-builder-draft'); if (raw) { try { const data = JSON.parse(raw); setCv(data.cv); setDesign(data.design); setTemplate(data.template); } catch {} } }, []);
+  const selected = useMemo(() => templates.find(t => t.id === template) ?? templates[0], [template]);
+  const update = <K extends keyof CV>(key: K, value: CV[K]) => setCv(prev => ({ ...prev, [key]: value }));
+  function saveDraft() { localStorage.setItem('ai-cv-builder-draft', JSON.stringify({ cv, design, template })); setSaved(true); setTimeout(() => setSaved(false), 1800); }
+  function newCV() { setCv({ ...starter, id: `cv-${Date.now()}`, name: '', role: '', summary: '', experience: [], education: [], skills: [], projects: [] }); setSaved(false); }
+  function selectTemplate(id: string) { const t = templates.find(x => x.id === id)!; setTemplate(id); setDesign(d => ({ ...d, accent: t.accent, columns: t.columns })); }
+  async function askAI(action: 'summary' | 'experience' | 'ats') { setBusy(true); setAiOutput('Generating…'); try { const res = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, cv, jobDescription: jd }) }); const data = await res.json(); setAiOutput(data.text || data.error || 'No suggestion returned.'); } catch { setAiOutput('AI is not configured. Add OPENAI_API_KEY to the server environment.'); } finally { setBusy(false); } }
+  function printCV() { window.print(); }
 
-  async function askAI(action: 'summary' | 'experience' | 'ats') {
-    setBusy(true);
-    setAiOutput('Generating suggestions…');
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action, cv, jobDescription: jd }),
-      });
-      const data = await res.json();
-      setAiOutput(data.text || data.error || 'No suggestion returned.');
-    } catch {
-      setAiOutput('AI service is not configured yet. Add OPENAI_API_KEY on the server to enable generation.');
-    } finally { setBusy(false); }
-  }
-
-  return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Professional CVs, powered by AI</span></div></div>
-        <div className="top-actions"><button className="ghost"><Plus size={16}/> New CV</button><button className="primary"><Download size={16}/> Export PDF</button></div>
-      </header>
-
-      <section className="workspace">
-        <aside className="sidebar">
-          <div className="tabs">
-            <button onClick={() => setActiveTab('editor')} className={activeTab === 'editor' ? 'active' : ''}><FileText size={16}/> Editor</button>
-            <button onClick={() => setActiveTab('templates')} className={activeTab === 'templates' ? 'active' : ''}><LayoutTemplate size={16}/> Templates</button>
-            <button onClick={() => setActiveTab('ai')} className={activeTab === 'ai' ? 'active' : ''}><Sparkles size={16}/> AI Assistant</button>
-          </div>
-
-          {activeTab === 'editor' && <div className="panel">
-            <label>Full name<input value={cv.name} onChange={e => setCv({...cv, name: e.target.value})}/></label>
-            <label>Professional title<input value={cv.role} onChange={e => setCv({...cv, role: e.target.value})}/></label>
-            <label>Professional summary<textarea rows={5} value={cv.summary} onChange={e => setCv({...cv, summary: e.target.value})}/></label>
-            <label>Skills<input value={cv.skills.join(', ')} onChange={e => setCv({...cv, skills: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}/></label>
-            <label>Education<textarea rows={3} value={cv.education.join('\n')} onChange={e => setCv({...cv, education: e.target.value.split('\n').filter(Boolean)})}/></label>
-          </div>}
-
-          {activeTab === 'templates' && <div className="template-grid">{templates.map(t => <button key={t.id} className={`template-card ${template === t.id ? 'selected' : ''}`} onClick={() => setTemplate(t.id)}><div className="mini-preview" style={{'--accent': t.accent} as React.CSSProperties}><div></div><i></i><i></i><i></i></div><strong>{t.name}</strong><span>{t.description}</span>{template === t.id && <CheckCircle2 size={15}/>}</button>)}<button className="template-card custom"><div className="custom-icon">＋</div><strong>Build your template</strong><span>1 or 2 columns, colors, fonts, spacing and sections.</span></button></div>}
-
-          {activeTab === 'ai' && <div className="panel ai-panel">
-            <div className="ai-box"><WandSparkles size={18}/><div><strong>AI CV Assistant</strong><span>Improve wording without inventing experience.</span></div></div>
-            <button onClick={() => askAI('summary')} disabled={busy} className="ai-btn">Improve summary</button>
-            <button onClick={() => askAI('experience')} disabled={busy} className="ai-btn">Rewrite experience bullets</button>
-            <label>Paste job description<textarea rows={8} value={jd} onChange={e => setJd(e.target.value)} placeholder="Paste a job description to identify relevant keywords…"/></label>
-            <button onClick={() => askAI('ats')} disabled={busy} className="ai-btn primary-ai">Analyze ATS match</button>
-            <pre className="ai-result">{aiOutput || 'AI suggestions will appear here.'}</pre>
-          </div>}
-        </aside>
-
-        <section className="preview-area">
-          <div className="preview-toolbar"><div><span className="pill">A4</span><span className="muted">{selected.name} template</span></div><div><span className="muted">Live preview</span><button className="ghost">Print</button></div></div>
-          <div className="paper-wrap"><article className="paper" style={{'--accent': selected.accent} as React.CSSProperties}>
-            <div className="resume-head"><div><h1>{cv.name}</h1><h2>{cv.role}</h2><p className="contact">Lahore, Pakistan · +92 300 0000000 · example@email.com</p></div><div className="avatar">MA</div></div>
-            <ResumeSection title="PROFILE"><p>{cv.summary}</p></ResumeSection>
-            <ResumeSection title="EXPERIENCE"><div className="timeline"><strong>Frontend Developer · Digital Studio</strong><span>2023 — Present</span>{cv.experience.map((item, i) => <p key={i}>• {item}</p>)}</div></ResumeSection>
-            <ResumeSection title="SKILLS"><div className="chips">{cv.skills.map(s => <span key={s}>{s}</span>)}</div></ResumeSection>
-            <ResumeSection title="EDUCATION">{cv.education.map((e, i) => <p key={i}>{e}</p>)}</ResumeSection>
-          </article></div>
-        </section>
-      </section>
-    </main>
-  );
+  return <main className="app-shell">
+    <header className="topbar"><div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Build. Customize. Get hired.</span></div></div><div className="top-actions"><button className="ghost" onClick={newCV}><Plus size={16}/> New CV</button><button className="ghost" onClick={saveDraft}><Save size={16}/> {saved ? 'Saved' : 'Save'}</button><button className="primary" onClick={printCV}><Printer size={16}/> Export / Print</button></div></header>
+    <section className="workspace">
+      <aside className="sidebar">
+        <nav className="tabs">{([['editor','Editor',FileText],['templates','Templates',LayoutTemplate],['designer','Design',Palette],['ai','AI Assistant',Sparkles]] as const).map(([id,label,Icon]) => <button key={id} onClick={() => setTab(id)} className={tab === id ? 'active' : ''}><Icon size={16}/>{label}</button>)}</nav>
+        {tab === 'editor' && <div className="panel editor-panel">
+          <label>Full name<input value={cv.name} onChange={e => update('name', e.target.value)} placeholder="Your name"/></label>
+          <label>Professional title<input value={cv.role} onChange={e => update('role', e.target.value)} placeholder="e.g. Software Engineer"/></label>
+          <div className="two"><label>Email<input value={cv.email} onChange={e => update('email', e.target.value)}/></label><label>Phone<input value={cv.phone} onChange={e => update('phone', e.target.value)}/></label></div>
+          <label>Location<input value={cv.location} onChange={e => update('location', e.target.value)}/></label>
+          <SectionEditor title="Professional Summary" value={cv.summary} onChange={v => update('summary', v)} placeholder="Write a concise professional summary…" />
+          <SectionEditor title="Experience" value={cv.experience.join('\n')} onChange={v => update('experience', v.split('\n').map(x => x.trim()).filter(Boolean))} placeholder="One achievement per line" />
+          <SectionEditor title="Education" value={cv.education.join('\n')} onChange={v => update('education', v.split('\n').map(x => x.trim()).filter(Boolean))} placeholder="One qualification per line" />
+          <SectionEditor title="Skills" value={cv.skills.join(', ')} onChange={v => update('skills', v.split(',').map(x => x.trim()).filter(Boolean))} placeholder="React, TypeScript, SQL…" />
+          <SectionEditor title="Projects" value={cv.projects.join('\n')} onChange={v => update('projects', v.split('\n').map(x => x.trim()).filter(Boolean))} placeholder="One project per line" />
+        </div>}
+        {tab === 'templates' && <div className="template-grid">{templates.map(t => <button key={t.id} className={`template-card ${template === t.id ? 'selected' : ''}`} onClick={() => selectTemplate(t.id)}><div className="mini-preview" style={{ '--accent': t.accent } as React.CSSProperties}><b></b><i></i><i></i><i></i></div><strong>{t.name}</strong><span>{t.description}</span></button>)}<button className="template-card custom" onClick={() => setTab('designer')}><div className="custom-icon">＋</div><strong>Build your template</strong><span>Customize columns, colors, font, spacing and sections.</span></button></div>}
+        {tab === 'designer' && <div className="panel"><div className="design-title"><Settings2 size={18}/><div><strong>Template Designer</strong><span>Changes update the preview instantly.</span></div></div><label>Accent color<input type="color" value={design.accent} onChange={e => setDesign({ ...design, accent: e.target.value })}/></label><label>Font<select value={design.font} onChange={e => setDesign({ ...design, font: e.target.value })}><option>Inter</option><option>Georgia</option><option>Arial</option><option>Verdana</option><option>Times New Roman</option></select></label><label>Text size <b>{design.size}px</b><input type="range" min="9" max="14" value={design.size} onChange={e => setDesign({ ...design, size: Number(e.target.value) })}/></label><label>Section spacing <b>{design.spacing}</b><input type="range" min="0.6" max="1.8" step="0.1" value={design.spacing} onChange={e => setDesign({ ...design, spacing: Number(e.target.value) })}/></label><div className="choice"><span>Columns</span><button className={design.columns === 1 ? 'chosen' : ''} onClick={() => setDesign({ ...design, columns: 1 })}>1 column</button><button className={design.columns === 2 ? 'chosen' : ''} onClick={() => setDesign({ ...design, columns: 2 })}>2 columns</button></div><div className="choice"><span>Profile photo</span><button className={design.showAvatar ? 'chosen' : ''} onClick={() => setDesign({ ...design, showAvatar: !design.showAvatar })}>{design.showAvatar ? 'Shown' : 'Hidden'}</button></div><div className="section-order"><strong>Sections</strong>{(['profile','experience','education','skills','projects'] as SectionKey[]).map(s => <div key={s}><GripVertical size={14}/>{s[0].toUpperCase()+s.slice(1)}<Trash2 size={14}/></div>)}</div></div>}
+        {tab === 'ai' && <div className="panel ai-panel"><div className="ai-box"><WandSparkles size={18}/><div><strong>AI CV Assistant</strong><span>Improves wording without inventing experience.</span></div></div><button disabled={busy} onClick={() => askAI('summary')} className="ai-btn">Improve summary</button><button disabled={busy} onClick={() => askAI('experience')} className="ai-btn">Rewrite experience</button><label>Job description<textarea rows={9} value={jd} onChange={e => setJd(e.target.value)} placeholder="Paste the job description here…"/></label><button disabled={busy} onClick={() => askAI('ats')} className="ai-btn primary-ai">Analyze ATS match</button><pre className="ai-result">{aiOutput || 'AI suggestions appear here.'}</pre></div>}
+      </aside>
+      <section className="preview-area"><div className="preview-toolbar"><div><span className="pill">A4</span><span className="muted">{selected.name} · {design.columns} column</span></div><div><span className="muted">Live preview</span><button className="ghost" onClick={printCV}><Download size={15}/> PDF / Print</button></div></div><div className="paper-wrap"><article className={`paper cols-${design.columns}`} style={{ '--accent': design.accent, '--resume-font': design.font, '--resume-size': `${design.size}px`, '--resume-space': design.spacing } as React.CSSProperties}>
+        <header className="resume-head"><div><h1>{cv.name || 'Your Name'}</h1><h2>{cv.role || 'Professional Title'}</h2><p className="contact">{cv.location} · {cv.phone} · {cv.email}</p></div>{design.showAvatar && <div className="avatar">{cv.name ? cv.name.split(' ').map(x => x[0]).slice(0,2).join('') : 'CV'}</div>}</header>
+        <div className="resume-columns"><div className="resume-main"><ResumeSection title="PROFILE"><p>{cv.summary || 'Add a professional summary from the editor.'}</p></ResumeSection><ResumeSection title="EXPERIENCE">{cv.experience.length ? cv.experience.map((x,i)=><div className="bullet" key={i}>• {x}</div>) : <p>Add your experience.</p>}</ResumeSection><ResumeSection title="PROJECTS">{cv.projects.map((x,i)=><p key={i}>{x}</p>)}</ResumeSection></div><div className="resume-side"><ResumeSection title="SKILLS"><div className="chips">{cv.skills.map(x=><span key={x}>{x}</span>)}</div></ResumeSection><ResumeSection title="EDUCATION">{cv.education.map((x,i)=><p key={i}>{x}</p>)}</ResumeSection></div></div>
+      </article></div></section>
+    </section>
+  </main>;
 }
 
-function ResumeSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="resume-section"><h3>{title}</h3>{children}</section>;
-}
+function SectionEditor({ title, value, onChange, placeholder }: { title: string; value: string; onChange: (v:string)=>void; placeholder:string }) { return <label><span className="label-row">{title}<small>•</small></span><textarea rows={title === 'Professional Summary' ? 5 : 3} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}/></label>; }
+function ResumeSection({ title, children }: { title: string; children: React.ReactNode }) { return <section className="resume-section"><h3>{title}</h3>{children}</section>; }

@@ -1,0 +1,10 @@
+{
+  "name": "AI CV Builder",
+  "short_name": "CV Builder",
+  "description": "Professional ATS-friendly CV builder with AI writing and offline editing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#111827",
+  "icons": []
+}

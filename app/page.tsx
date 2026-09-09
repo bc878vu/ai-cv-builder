@@ -27,6 +27,7 @@ const templates: Template[] = [
 
 const starter: CV = { id: 'cv-1', name: 'Muhammad Ahmed', role: 'Frontend Developer', email: 'example@email.com', phone: '+92 300 0000000', location: 'Lahore, Pakistan', summary: 'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.', experience: ['Built responsive React interfaces used across customer-facing workflows.', 'Improved frontend performance, reusable components and accessibility standards.'], education: ['BS Computer Science — University of Lahore'], skills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS'], projects: ['AI CV Builder — designed a template-driven resume editor with AI assistance.'] };
 const defaultDesign: Design = { accent: '#1d4ed8', font: 'Inter', size: 11, spacing: 1, columns: 1, radius: 6, showAvatar: true };
+const defaultSectionOrder: SectionKey[] = ['profile', 'experience', 'projects', 'skills', 'education'];
 const sectionLabels: Record<SectionKey, string> = { profile: 'Profile', experience: 'Experience', education: 'Education', skills: 'Skills', projects: 'Projects' };
 
 function blankCV(id: string): CV { return { ...starter, id, name: '', role: '', summary: '', experience: [], education: [], skills: [], projects: [] }; }
@@ -45,7 +46,7 @@ export default function Home() {
   const [aiAction, setAiAction] = useState<AIAction | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const [sectionOrder, setSectionOrder] = useState<SectionKey[]>(['profile', 'experience', 'projects', 'skills', 'education']);
+  const [sectionOrder, setSectionOrder] = useState<SectionKey[]>(defaultSectionOrder);
 
   useEffect(() => {
     const id = requestedId || 'cv-1';
@@ -56,7 +57,7 @@ export default function Home() {
         if (data.cv) setCv({ ...starter, ...data.cv, id });
         if (data.design) setDesign({ ...defaultDesign, ...data.design });
         if (data.template) setTemplate(data.template);
-        if (data.sectionOrder) setSectionOrder(data.sectionOrder);
+        if (Array.isArray(data.sectionOrder)) setSectionOrder(data.sectionOrder);
         setSaveState('saved');
         return;
       } catch {}
@@ -68,6 +69,7 @@ export default function Home() {
         if (data.cv) setCv({ ...starter, ...data.cv });
         if (data.design) setDesign({ ...defaultDesign, ...data.design });
         if (data.template) setTemplate(data.template);
+        if (Array.isArray(data.sectionOrder)) setSectionOrder(data.sectionOrder);
         setSaveState('saved');
         return;
       } catch {}
@@ -75,6 +77,7 @@ export default function Home() {
     setCv(requestedId ? blankCV(id) : starter);
     setDesign(defaultDesign);
     setTemplate('professional');
+    setSectionOrder(defaultSectionOrder);
     setSaveState('unsaved');
   }, [requestedId]);
 
@@ -94,11 +97,7 @@ export default function Home() {
     if (id !== currentCV.id) setCv(savedCV);
   }
 
-  function saveDraft() {
-    setSaveState('saving');
-    persist();
-    setSaveState('saved');
-  }
+  function saveDraft() { setSaveState('saving'); persist(); setSaveState('saved'); }
 
   useEffect(() => {
     if (saveState !== 'unsaved') return;
@@ -109,8 +108,8 @@ export default function Home() {
   function newCV() {
     const id = `cv-${Date.now()}`;
     const fresh = blankCV(id);
-    setCv(fresh); setDesign(defaultDesign); setTemplate('professional'); setSectionOrder(['profile', 'experience', 'projects', 'skills', 'education']); setSavedTab();
-    persist(fresh, defaultDesign, 'professional', ['profile', 'experience', 'projects', 'skills', 'education']);
+    setCv(fresh); setDesign(defaultDesign); setTemplate('professional'); setSectionOrder(defaultSectionOrder); setSavedTab();
+    persist(fresh, defaultDesign, 'professional', defaultSectionOrder);
     router.push(`/?cv=${id}`);
   }
 
@@ -126,9 +125,11 @@ export default function Home() {
     try {
       const res = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, cv, jobDescription: jd }) });
       const data = await res.json();
-      setAiOutput(data.text || data.error || 'No suggestion returned.');
-    } catch { setAiOutput('AI is not configured. Add OPENAI_API_KEY to the server environment.'); }
-    finally { setBusy(false); }
+      if (!res.ok) throw new Error(data.error || 'AI request failed.');
+      setAiOutput(data.text || 'No suggestion returned.');
+    } catch (error) {
+      setAiOutput(error instanceof Error ? error.message : 'Gemini AI request failed.');
+    } finally { setBusy(false); }
   }
 
   function applyAI() {
@@ -144,8 +145,19 @@ export default function Home() {
     setSectionOrder(next); setSaveState('unsaved');
   }
 
-  function resetDesign() { setDesign(defaultDesign); setTemplate('professional'); setSaveState('unsaved'); }
+  function resetDesign() { setDesign(defaultDesign); setSectionOrder(defaultSectionOrder); setTemplate('professional'); setSaveState('unsaved'); }
   function printCV() { window.print(); }
+
+  const renderSection = (key: SectionKey) => {
+    if (key === 'profile') return <ResumeSection key={key} title="PROFILE"><p>{cv.summary || 'Add a professional summary from the editor.'}</p></ResumeSection>;
+    if (key === 'experience') return <ResumeSection key={key} title="EXPERIENCE">{cv.experience.length ? cv.experience.map((x,i)=><div className="bullet" key={i}>• {x}</div>) : <p>Add your experience.</p>}</ResumeSection>;
+    if (key === 'projects') return <ResumeSection key={key} title="PROJECTS">{cv.projects.length ? cv.projects.map((x,i)=><p key={i}>{x}</p>) : <p>Add relevant projects.</p>}</ResumeSection>;
+    if (key === 'skills') return <ResumeSection key={key} title="SKILLS"><div className="chips">{cv.skills.length ? cv.skills.map(x=><span key={x}>{x}</span>) : <span className="placeholder-chip">Add skills</span>}</div></ResumeSection>;
+    return <ResumeSection key={key} title="EDUCATION">{cv.education.length ? cv.education.map((x,i)=><p key={i}>{x}</p>) : <p>Add your education.</p>}</ResumeSection>;
+  };
+
+  const mainKeys = sectionOrder.filter(key => ['profile', 'experience', 'projects'].includes(key));
+  const sideKeys = sectionOrder.filter(key => ['skills', 'education'].includes(key));
 
   return <main className="app-shell">
     <header className="topbar">
@@ -174,7 +186,7 @@ export default function Home() {
       </aside>
       <section className="preview-area"><div className="preview-toolbar"><div><span className="pill">A4</span><span className="muted">{selected.name} · {design.columns} column</span></div><div><span className="muted">Live preview</span><button className="ghost" onClick={printCV}><Download size={15}/> Export / Print</button></div></div><div className="paper-wrap"><article className={`paper cols-${design.columns}`} style={{ '--accent': design.accent, '--resume-font': design.font, '--resume-size': `${design.size}px`, '--resume-space': design.spacing } as React.CSSProperties}>
         <header className="resume-head"><div><h1>{cv.name || 'Your Name'}</h1><h2>{cv.role || 'Professional Title'}</h2><p className="contact">{[cv.location, cv.phone, cv.email].filter(Boolean).join(' · ') || 'Location · Phone · Email'}</p></div>{design.showAvatar && <div className="avatar">{cv.name ? cv.name.split(' ').map(x => x[0]).slice(0,2).join('') : 'CV'}</div>}</header>
-        <div className="resume-columns"><div className="resume-main"><ResumeSection title="PROFILE"><p>{cv.summary || 'Add a professional summary from the editor.'}</p></ResumeSection><ResumeSection title="EXPERIENCE">{cv.experience.length ? cv.experience.map((x,i)=><div className="bullet" key={i}>• {x}</div>) : <p>Add your experience.</p>}</ResumeSection><ResumeSection title="PROJECTS">{cv.projects.length ? cv.projects.map((x,i)=><p key={i}>{x}</p>) : <p>Add relevant projects.</p>}</ResumeSection></div><div className="resume-side"><ResumeSection title="SKILLS"><div className="chips">{cv.skills.length ? cv.skills.map(x=><span key={x}>{x}</span>) : <span className="placeholder-chip">Add skills</span>}</div></ResumeSection><ResumeSection title="EDUCATION">{cv.education.length ? cv.education.map((x,i)=><p key={i}>{x}</p>) : <p>Add your education.</p>}</ResumeSection></div></div>
+        <div className="resume-columns"><div className="resume-main">{mainKeys.map(renderSection)}</div><div className="resume-side">{sideKeys.map(renderSection)}</div></div>
       </article></div></section>
     </section>
   </main>;

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Github, Mail, Menu, UserRound, X } from 'lucide-react';
+import { Github, Mail, Menu, UserRound, X, Star } from 'lucide-react';
 import { useState } from 'react';
 
 const avatar = 'https://avatars.githubusercontent.com/u/270855559?v=4';
@@ -11,9 +11,9 @@ export default function SiteChrome() {
   const pathname = usePathname();
   const isEditor = pathname === '/';
   const [open, setOpen] = useState(false);
-  const links = [['/about','About'],['/projects','Projects'],['/profile','Profile'],['/contact','Contact'],['/terms','Terms'],['/privacy','Privacy']] as const;
+  const links = [['/about','About'],['/services','Services'],['/projects','Projects'],['/profile','Profile'],['/contact','Contact'],['/feedback','Feedback'],['/terms','Terms'],['/privacy','Privacy']] as const;
 
-  if (isEditor) return <div className="public-dock" aria-label="AI CV Builder public pages"><Link href="/about">About</Link><Link href="/projects">Projects</Link><Link href="/profile"><img src={avatar} alt=""/> Profile</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link></div>;
+  if (isEditor) return <div className="public-dock" aria-label="AI CV Builder public pages"><Link href="/about">About</Link><Link href="/services">Services</Link><Link href="/projects">Projects</Link><Link href="/profile"><img src={avatar} alt=""/> Profile</Link><Link href="/feedback"><Star size={12}/> Feedback</Link><Link href="/contact">Contact</Link></div>;
 
   return <header className="public-nav">
     <Link className="public-brand" href="/" aria-label="AI CV Builder home"><span className="public-logo"><span>AI</span><b>CV</b></span><span><b>AI CV Builder</b><small>Build smarter. Get hired.</small></span></Link>

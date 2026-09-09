@@ -1,17 +1,21 @@
 # AI CV Builder
 
-A template-driven CV builder with live A4 preview, customizable design controls and server-side AI assistance.
+A professional, responsive CV builder with live A4 preview, customizable templates, profile-photo controls and a server-side Gemini AI writing assistant.
 
-## Implemented
+## Current features
+
 - Next.js App Router + TypeScript
-- Responsive CV editor for profile, experience, education, skills and projects
-- 8 built-in CV templates
-- Live A4 rendering with 1/2-column layouts
-- Template Designer: accent color, font, text size, spacing, columns and profile photo visibility
-- Local draft persistence in browser storage
-- Print-friendly A4 export flow
-- AI assistant for summary improvement, experience rewriting and ATS/job-description analysis
-- Server-side `OPENAI_API_KEY` handling
+- Responsive editor that works across desktop, tablet and mobile
+- 8 built-in CV templates with 1/2-column layouts
+- Live A4 preview with print/PDF export
+- Profile photo upload with client-side compression
+- Photo visibility, position (left/right/top/bottom), shape and size controls
+- Accent color, font, text size, spacing, columns and section-order controls
+- Auto-save and multiple CVs in browser storage
+- AI writing settings for tone, length, audience, language and focus
+- AI actions: improve summary, rewrite experience, improve skills, tailor to a job, cover letter and ATS analysis
+- AI prompts are grounded in the candidate CV and explicitly prohibit fabricated facts
+- Server-side Gemini API key handling
 
 ## Run locally
 
@@ -20,24 +24,26 @@ npm install
 npm run dev
 ```
 
-Copy `.env.example` to `.env.local` and add your server key:
+Copy `.env.example` to `.env.local` and add the server key:
 
 ```env
-OPENAI_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
 ```
 
-## Architecture direction
+Never commit a real API key to Git.
 
-The application is intentionally template-driven: CV content is separate from presentation so the same CV can render through multiple templates. The next production layer will move drafts/templates to a database, add authentication, file storage and version history, then add true drag-and-drop section ordering and export services.
+## Architecture
+
+CV content is separated from presentation so one CV can render through multiple templates. The current MVP stores drafts locally for a fast zero-setup experience. The production roadmap adds authentication, database persistence, cloud photo storage, version history and dedicated export services.
 
 ## Roadmap
 
-1. Authentication + user dashboard
-2. Database-backed multiple CVs and saved custom templates
-3. Drag-and-drop template builder
-4. Profile photo/file storage
-5. Robust PDF + DOCX + PNG export
+1. Authentication + account dashboard
+2. Database-backed CVs and saved custom templates
+3. True drag-and-drop template builder
+4. Cloud profile-photo storage and crop editor
+5. Robust PDF + DOCX + PNG export service
 6. Structured AI generation with Accept/Reject/Regenerate
-7. Job-description keyword matching + ATS scoring
-8. Cover-letter generator and job-specific CV tailoring
-9. Admin template management and template marketplace foundation
+7. Deterministic keyword extraction + ATS scoring layer
+8. Cover-letter and job-specific CV workflows
+9. Admin template management and marketplace foundation

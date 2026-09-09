@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FileText, Plus, Trash2, ArrowRight, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import './dashboard.css';
 
 type SavedCV = { id: string; name: string; role: string; updatedAt: string };
 const KEY = 'ai-cv-builder-cvs';

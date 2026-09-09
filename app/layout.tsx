@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import ExportInterceptor from './export-interceptor';
 import SiteChrome from './site-chrome';
 import './globals.css';
+import './public.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),
@@ -14,31 +15,12 @@ export const metadata: Metadata = {
   creator: 'Asad Amanat Ali',
   publisher: 'AI CV Builder',
   manifest: '/manifest.webmanifest',
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
-  },
-  openGraph: {
-    type: 'website',
-    url: '/',
-    title: 'AI CV Builder — Build a Professional CV with AI',
-    description: 'Create ATS-friendly CVs with professional templates, AI writing, photo controls and PDF/DOCX export.',
-    siteName: 'AI CV Builder',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI CV Builder',
-    description: 'Build professional ATS-friendly CVs with AI.',
-  },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
+  openGraph: { type: 'website', url: '/', title: 'AI CV Builder — Build a Professional CV with AI', description: 'Create ATS-friendly CVs with professional templates, AI writing, photo controls and PDF/DOCX export.', siteName: 'AI CV Builder' },
+  twitter: { card: 'summary_large_image', title: 'AI CV Builder', description: 'Build professional ATS-friendly CVs with AI.' },
 };
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',
-  themeColor: '#111827',
-};
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#111827' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

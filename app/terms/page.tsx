@@ -1,0 +1,7 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Terms of Use', description: 'Terms of use for AI CV Builder.' };
+
+export default function TermsPage() {
+  return <main className="legal-page"><span className="eyebrow">LEGAL</span><h1>Terms of Use</h1><p className="legal-lead">Use AI CV Builder responsibly and review your CV before sending it to an employer.</p><section><h2>AI output</h2><p>AI suggestions are assistance, not a guarantee of accuracy, employment, ATS ranking or hiring outcomes. You are responsible for checking every generated statement before using it.</p></section><section><h2>Truthfulness</h2><p>Do not use the product to fabricate employment, education, skills, certifications, achievements or other professional claims. The AI assistant is instructed to avoid unsupported claims, but you remain responsible for the final document.</p></section><section><h2>Exports</h2><p>PDF and DOCX exports are convenience features. Always open the exported file and verify layout, page breaks, links, contact details and content before submitting it.</p></section><section><h2>Availability</h2><p>AI features depend on the configured provider and may be unavailable because of network, quota, configuration or service limitations. Offline editing can continue for locally available features.</p></section><small>Last updated: September 9, 2026</small></main>;
+}

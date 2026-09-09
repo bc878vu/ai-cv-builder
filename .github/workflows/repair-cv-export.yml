@@ -1,0 +1,89 @@
+name: Repair CV export and import
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.head_commit.message != 'fix: repair CV export/import pipeline'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply repairs
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+
+          root = Path('.')
+          page = root / 'app/page.tsx'
+          css = root / 'app/globals.css'
+          package = root / 'package.json'
+          config = root / 'next.config.ts'
+
+          s = page.read_text()
+
+          old_pdf = "if(ext==='pdf'){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()),disableWorker:true}).promise;"
+          new_pdf = "if(ext==='pdf'){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc='/pdf.worker.mjs';const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;"
+          if old_pdf not in s:
+              raise SystemExit('Expected PDF importer block was not found')
+          s = s.replace(old_pdf, new_pdf, 1)
+
+          old_pdf_export = "function exportPDF(){document.title=`${cv.name||'CV'} - CV`;window.print();window.setTimeout(()=>{document.title='AI CV Builder'},1500)}"
+          new_pdf_export = "async function exportPDF(){const paper=document.querySelector('.paper') as HTMLElement|null;if(!paper){window.print();return}setImportMessage('Preparing PDF…');try{const mod:any=await import('html2pdf.js');const html2pdf=mod.default||mod;await html2pdf().set({margin:0,filename:`${(cv.name||'cv').replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['.resume-section','.avatar']}}).from(paper).save();setImportMessage('PDF downloaded successfully.')}catch(error){setImportMessage(error instanceof Error?error.message:'PDF export failed.');window.print()}}"
+          if old_pdf_export not in s:
+              raise SystemExit('Expected PDF export function was not found')
+          s = s.replace(old_pdf_export, new_pdf_export, 1)
+
+          old_docx_start = s.index(' async function exportDOCX(){')
+          old_docx_end = s.index(' function renderSection', old_docx_start)
+          new_docx = r''' async function exportDOCX(){setImportMessage('Preparing Word document…');try{const {Document,Packer,Paragraph,TextRun,ImageRun,Table,TableRow,TableCell,WidthType,BorderStyle,VerticalAlign,AlignmentType,ShadingType}=await import('docx');const font=design.font;const accent=design.accent.replace('#','').toUpperCase();const bodySize=Math.max(17,Math.round(design.size*2));const noBorders={top:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},bottom:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},left:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},right:{style:BorderStyle.NONE,size:0,color:'FFFFFF'}};const run=(text:string,opts:any={})=>new TextRun({text,font,size:bodySize,color:'374151',...opts});const para=(text:string,bullet=false)=>new Paragraph({children:[run(text)],bullet:bullet?{level:0}:undefined,spacing:{after:Math.round(70*design.spacing),line:Math.round(270*design.spacing)}});const heading=(text:string)=>new Paragraph({children:[run(text.toUpperCase(),{bold:true,color:accent,size:bodySize+2,allCaps:true})],spacing:{before:Math.round(180*design.spacing),after:90},border:{bottom:{style:BorderStyle.SINGLE,size:5,color:accent,space:2}}});const section=(key:SectionKey)=>{if(key==='profile')return cv.summary?[heading('Profile'),para(cv.summary)]:[];const map:Record<string,{title:string;values:string[];bullets?:boolean}>={experience:{title:'Experience',values:cv.experience,bullets:true},projects:{title:'Projects',values:cv.projects},skills:{title:'Skills',values:cv.skills.length?[cv.skills.join(' • ')]:[]},education:{title:'Education',values:cv.education},certifications:{title:'Certifications',values:cv.certifications},languages:{title:'Languages',values:cv.languages},interests:{title:'Interests',values:cv.interests}};const item=map[key];if(!item||!item.values.length)return [];return [heading(item.title),...item.values.map(x=>para(x,!!item.bullets))]};const identity=[new Paragraph({children:[run(cv.name||'Your Name',{bold:true,size:Math.round(design.size*4.4),color:'111827'})],spacing:{after:60}}),new Paragraph({children:[run(cv.role||'Professional Title',{bold:true,size:Math.round(design.size*2.4),color:accent})],spacing:{after:60}}),new Paragraph({children:[run([cv.location,cv.phone,cv.email,cv.linkedin,cv.website].filter(Boolean).join(' · ')||'Location · Phone · Email',{size:Math.max(14,Math.round(design.size*1.55)),color:'6B7280'})]})];let photoParagraph:Paragraph|null=null;if(cv.photo&&design.showAvatar){const base64=cv.photo.split(',')[1]||'';const binary=atob(base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);photoParagraph=new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({type:'jpg',data:bytes,transformation:{width:Math.min(cv.photoSize,120),height:Math.min(cv.photoSize,120)}})]})}const headerChildren:Paragraph[]=[];if(cv.photoPosition==='top'&&photoParagraph)headerChildren.push(photoParagraph,...identity);else if(cv.photoPosition==='bottom')headerChildren.push(...identity,...(photoParagraph?[photoParagraph]:[]));else{const photoCell=new TableCell({children:photoParagraph?[photoParagraph]:[new Paragraph('')],verticalAlign:VerticalAlign.CENTER,width:{size:24,type:WidthType.PERCENTAGE},borders:noBorders});const identityCell=new TableCell({children:identity,verticalAlign:VerticalAlign.CENTER,width:{size:76,type:WidthType.PERCENTAGE},borders:noBorders});const cells=cv.photoPosition==='left'?[photoCell,identityCell]:[identityCell,photoCell];headerChildren.push(new Paragraph({children:[],spacing:{after:20}}));headerChildren.push(...identity);if(photoParagraph)headerChildren.push(photoParagraph)}const headerTable=new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:noBorders,rows:[new TableRow({children:cv.photoPosition==='left'&&photoParagraph?[new TableCell({children:[photoParagraph],width:{size:24,type:WidthType.PERCENTAGE},borders:noBorders}),new TableCell({children:identity,width:{size:76,type:WidthType.PERCENTAGE},borders:noBorders})]:cv.photoPosition==='right'&&photoParagraph?[new TableCell({children:identity,width:{size:76,type:WidthType.PERCENTAGE},borders:noBorders}),new TableCell({children:[photoParagraph],width:{size:24,type:WidthType.PERCENTAGE},borders:noBorders})]:[new TableCell({children:headerChildren,columnSpan:2,borders:noBorders})]})]});const ordered=sectionOrder;const mainKeys=ordered.filter(k=>['profile','experience','projects'].includes(k));const sideKeys=ordered.filter(k=>['skills','education','certifications','languages','interests'].includes(k));const bodyChildren:any[]=[headerTable];if(design.columns===2){bodyChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:noBorders,rows:[new TableRow({children:[new TableCell({children:mainKeys.flatMap(section),width:{size:68,type:WidthType.PERCENTAGE},borders:noBorders}),new TableCell({children:sideKeys.flatMap(section),width:{size:32,type:WidthType.PERCENTAGE},borders:noBorders})]})]}))}else bodyChildren.push(...ordered.flatMap(section));const doc=new Document({creator:'AI CV Builder',title:cv.name||'CV',sections:[{properties:{page:{margin:{top:700,right:700,bottom:700,left:700}}},children:bodyChildren}]});downloadBlob(await Packer.toBlob(doc),`${(cv.name||'cv').replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.docx`);setImportMessage('Word document downloaded with the profile photo and matching column structure.')}catch(error){setImportMessage(error instanceof Error?error.message:'DOCX export failed.')}}
+'''
+          s = s[:old_docx_start] + new_docx + s[old_docx_end:]
+
+          old_toolbar = '<div><span className="muted">Live preview</span><button className="ghost" onClick={exportPDF}><Printer size={15}/>PDF</button><button className="ghost" onClick={exportDOCX}><FileText size={15}/>DOCX</button></div>'
+          new_toolbar = '<div><span className="muted">Live preview</span></div>'
+          if old_toolbar not in s:
+              raise SystemExit('Expected duplicate preview export toolbar was not found')
+          s = s.replace(old_toolbar,new_toolbar,1)
+          page.write_text(s)
+
+          c = css.read_text()
+          c = c.replace('.resume-head.photo-pos-top .avatar{order:-1}.resume-head.photo-pos-bottom .avatar{order:2}', '.resume-head.photo-pos-left .avatar{order:-1}.resume-head.photo-pos-right .avatar{order:2}.resume-head.photo-pos-top .avatar{order:-1}.resume-head.photo-pos-bottom .avatar{order:2}')
+          c = c.replace('@media print{html,body{background:#fff}', '@page{size:A4 portrait;margin:0}\n@media print{html,body{background:#fff}')
+          c = c.replace('.resume-head.photo-pos-left,.resume-head.photo-pos-right{flex-direction:column;align-items:center;text-align:center}', '.resume-head.photo-pos-left,.resume-head.photo-pos-right{flex-direction:row;align-items:center;text-align:left}')
+          css.write_text(c)
+
+          data=json.loads(package.read_text())
+          data['version']='0.6.1'
+          data['scripts']['postinstall']='node scripts/copy-pdf-worker.mjs'
+          data['dependencies']['html2pdf.js']='^0.14.0'
+          package.write_text(json.dumps(data,indent=2)+'\n')
+
+          config.write_text("import type { NextConfig } from 'next';\n\nconst nextConfig: NextConfig = {};\n\nexport default nextConfig;\n")
+          
+          worker = root / 'scripts/copy-pdf-worker.mjs'
+          worker.parent.mkdir(parents=True,exist_ok=True)
+          worker.write_text("import fs from 'node:fs';\nimport path from 'node:path';\nimport { createRequire } from 'node:module';\n\nconst require = createRequire(import.meta.url);\nconst dist = path.dirname(require.resolve('pdfjs-dist/package.json'));\nconst candidates = [path.join(dist,'build','pdf.worker.mjs'),path.join(dist,'legacy','build','pdf.worker.mjs')];\nconst source = candidates.find((file)=>fs.existsSync(file));\nif(!source) throw new Error('pdfjs worker file was not found');\nfs.mkdirSync('public',{recursive:true});\nfs.copyFileSync(source,'public/pdf.worker.mjs');\nconsole.log('Copied PDF.js worker to public/pdf.worker.mjs');\n")
+          PY
+
+      - name: Validate and build
+        run: |
+          npm install
+          npm run check
+          npm run build
+
+      - name: Commit repairs and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/page.tsx app/globals.css next.config.ts package.json scripts/copy-pdf-worker.mjs
+          git rm .github/workflows/repair-cv-export.yml
+          git commit -m "fix: repair CV export/import pipeline"
+          git push

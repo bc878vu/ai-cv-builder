@@ -1,247 +1,75 @@
 'use client';
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Check, Download, FileText, FolderOpen, LayoutTemplate, Palette, Plus, Printer, RotateCcw, Save, Settings2, Sparkles, WandSparkles, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowDown, ArrowUp, Check, FileArchive, FileText, FolderOpen, ImagePlus, LayoutTemplate, Palette, Plus, Printer, RotateCcw, Save, Settings2, Sparkles, Upload, WandSparkles, Wifi, WifiOff, X } from 'lucide-react';
 
-type SectionKey = 'profile' | 'experience' | 'education' | 'skills' | 'projects';
+type SectionKey = 'profile' | 'experience' | 'projects' | 'skills' | 'education' | 'certifications' | 'languages' | 'interests';
 type PhotoPosition = 'left' | 'right' | 'top' | 'bottom';
 type PhotoShape = 'circle' | 'rounded' | 'square';
-type CV = { id: string; name: string; role: string; email: string; phone: string; location: string; summary: string; experience: string[]; education: string[]; skills: string[]; projects: string[]; photo: string };
-type Design = { accent: string; font: string; size: number; spacing: number; columns: 1 | 2; radius: number; showAvatar: boolean; photoPosition: PhotoPosition; photoShape: PhotoShape; photoSize: number };
-type Template = { id: string; name: string; description: string; accent: string; columns: 1 | 2 };
-type SavedCV = { id: string; name: string; role: string; updatedAt: string };
-type AIAction = 'summary' | 'experience' | 'skills' | 'tailor' | 'cover-letter' | 'ats';
-type WritingSettings = { tone: string; length: string; audience: string; language: string; focus: string };
+type CV = { id:string; name:string; role:string; email:string; phone:string; location:string; linkedin:string; website:string; summary:string; experience:string[]; education:string[]; skills:string[]; projects:string[]; certifications:string[]; languages:string[]; interests:string[]; photo:string; photoPosition:PhotoPosition; photoShape:PhotoShape; photoSize:number };
+type Design = { accent:string; font:string; size:number; spacing:number; columns:1|2; radius:number; showAvatar:boolean };
+type Template = { id:string; name:string; description:string; accent:string; columns:1|2; style:string };
+type SavedCV = { id:string; name:string; role:string; updatedAt:string };
+type AIAction = 'summary'|'experience'|'skills'|'tailor'|'cover'|'ats';
+type AISettings = { tone:string; length:string; audience:string; language:string; focus:string };
 
-const CV_INDEX_KEY = 'ai-cv-builder-cvs';
-const LEGACY_DRAFT_KEY = 'ai-cv-builder-draft';
-
-const templates: Template[] = [
-  { id: 'professional', name: 'Professional', description: 'Clean corporate hierarchy.', accent: '#1d4ed8', columns: 1 },
-  { id: 'modern', name: 'Modern', description: 'Strong typography and balance.', accent: '#0f766e', columns: 2 },
-  { id: 'minimal', name: 'Minimal', description: 'Simple ATS-first design.', accent: '#111827', columns: 1 },
-  { id: 'creative', name: 'Creative', description: 'Visual personality for creative roles.', accent: '#7c3aed', columns: 2 },
-  { id: 'executive', name: 'Executive', description: 'Premium senior profile.', accent: '#9a3412', columns: 1 },
-  { id: 'developer', name: 'Developer', description: 'Technical portfolio hierarchy.', accent: '#0369a1', columns: 2 },
-  { id: 'graduate', name: 'Fresh Graduate', description: 'Projects and education first.', accent: '#15803d', columns: 1 },
-  { id: 'ats', name: 'ATS Friendly', description: 'Parser-friendly structure.', accent: '#374151', columns: 1 },
+const CV_INDEX_KEY='ai-cv-builder-cvs';
+const LEGACY_DRAFT_KEY='ai-cv-builder-draft';
+const defaultSectionOrder:SectionKey[]=['profile','experience','projects','skills','education','certifications','languages','interests'];
+const sectionLabels:Record<SectionKey,string>={profile:'Profile',experience:'Experience',projects:'Projects',skills:'Skills',education:'Education',certifications:'Certifications',languages:'Languages',interests:'Interests'};
+const templates:Template[]=[
+{id:'professional',name:'Professional',description:'Clean corporate hierarchy.',accent:'#1d4ed8',columns:1,style:'classic'},
+{id:'modern',name:'Modern',description:'Strong typography and balance.',accent:'#0f766e',columns:2,style:'modern'},
+{id:'minimal',name:'Minimal',description:'Simple ATS-first design.',accent:'#111827',columns:1,style:'minimal'},
+{id:'creative',name:'Creative',description:'Visual personality for creative roles.',accent:'#7c3aed',columns:2,style:'creative'},
+{id:'executive',name:'Executive',description:'Premium senior profile.',accent:'#9a3412',columns:1,style:'executive'},
+{id:'developer',name:'Developer',description:'Technical portfolio hierarchy.',accent:'#0369a1',columns:2,style:'developer'},
+{id:'graduate',name:'Fresh Graduate',description:'Projects and education first.',accent:'#15803d',columns:1,style:'graduate'},
+{id:'ats',name:'ATS Friendly',description:'Parser-friendly, no visual clutter.',accent:'#374151',columns:1,style:'ats'},
+{id:'consulting',name:'Consulting',description:'Dense, impact-focused format.',accent:'#1e3a8a',columns:1,style:'consulting'},
+{id:'academic',name:'Academic',description:'Education and research focused.',accent:'#334155',columns:1,style:'academic'},
+{id:'elegant',name:'Elegant',description:'Refined typography and spacing.',accent:'#7c2d12',columns:1,style:'elegant'},
+{id:'bold',name:'Bold',description:'High-impact modern header.',accent:'#be123c',columns:2,style:'bold'},
 ];
+const starter:CV={id:'cv-1',name:'Muhammad Ahmed',role:'Frontend Developer',email:'example@email.com',phone:'+92 300 0000000',location:'Lahore, Pakistan',linkedin:'',website:'',summary:'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.',experience:['Built responsive React interfaces used across customer-facing workflows.','Improved frontend performance, reusable components and accessibility standards.'],education:['BS Computer Science — University of Lahore'],skills:['React','Next.js','TypeScript','JavaScript','Tailwind CSS'],projects:['AI CV Builder — designed a template-driven resume editor with AI assistance.'],certifications:[],languages:[],interests:[],photo:'',photoPosition:'right',photoShape:'circle',photoSize:88};
+const defaultDesign:Design={accent:'#1d4ed8',font:'Inter',size:10.5,spacing:1,columns:1,radius:6,showAvatar:true};
+const defaultAI:AISettings={tone:'Professional',length:'Concise',audience:'Recruiters / ATS',language:'English',focus:'Achievements & impact'};
+function blankCV(id:string):CV{return {...starter,id,name:'',role:'',email:'',phone:'',location:'',linkedin:'',website:'',summary:'',experience:[],education:[],skills:[],projects:[],certifications:[],languages:[],interests:[],photo:''};}
+function readIndex():SavedCV[]{try{return JSON.parse(localStorage.getItem(CV_INDEX_KEY)||'[]')}catch{return[]}}
+function cleanAIText(text:string){return text.replace(/```[\s\S]*?```/g,'').replace(/^\s*(#{1,6}|\*{1,2}|_{1,2})\s*/gm,'').replace(/^\s*[-•]\s*/gm,'').replace(/\*{1,2}([^*]+)\*{1,2}/g,'$1').trim()}
+function splitLines(text:string){return cleanAIText(text).split(/\r?\n+/).map(x=>x.replace(/^\s*[•*-]\s*/,'').trim()).filter(Boolean)}
+function compressImage(file:File,max=900):Promise<string>{return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error('Could not read image.'));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error('Invalid image.'));img.onload=()=>{const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');if(!ctx)return reject(new Error('Image processing unavailable.'));ctx.drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.84))};img.src=String(reader.result)};reader.readAsDataURL(file)})}
 
-const starter: CV = { id: 'cv-1', name: 'Muhammad Ahmed', role: 'Frontend Developer', email: 'example@email.com', phone: '+92 300 0000000', location: 'Lahore, Pakistan', summary: 'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.', experience: ['Built responsive React interfaces used across customer-facing workflows.', 'Improved frontend performance, reusable components and accessibility standards.'], education: ['BS Computer Science — University of Lahore'], skills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS'], projects: ['AI CV Builder — designed a template-driven resume editor with AI assistance.'], photo: '' };
-const defaultDesign: Design = { accent: '#1d4ed8', font: 'Inter', size: 11, spacing: 1, columns: 1, radius: 6, showAvatar: true, photoPosition: 'right', photoShape: 'circle', photoSize: 78 };
-const defaultSectionOrder: SectionKey[] = ['profile', 'experience', 'projects', 'skills', 'education'];
-const defaultWriting: WritingSettings = { tone: 'Professional', length: 'Medium', audience: 'Recruiters / ATS', language: 'English', focus: 'Achievements' };
-const sectionLabels: Record<SectionKey, string> = { profile: 'Profile', experience: 'Experience', education: 'Education', skills: 'Skills', projects: 'Projects' };
-
-function blankCV(id: string): CV { return { ...starter, id, name: '', role: '', summary: '', experience: [], education: [], skills: [], projects: [], photo: '' }; }
-function readIndex(): SavedCV[] { try { return JSON.parse(localStorage.getItem(CV_INDEX_KEY) || '[]'); } catch { return []; } }
-function clampText(value: string, max: number) { return value.length > max ? value.slice(0, max) : value; }
-
-async function compressPhoto(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new Error('Please select a JPG, PNG or WebP image.');
-  if (file.size > 5 * 1024 * 1024) throw new Error('Profile photo must be 5 MB or smaller.');
-  const source = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
-    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
-    image.src = url;
-  });
-  const size = 640;
-  const scale = Math.min(1, size / Math.max(source.naturalWidth, source.naturalHeight));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Your browser could not process the image.');
-  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/webp', 0.82);
+export default function Home(){
+ const router=useRouter(); const searchParams=useSearchParams(); const requestedId=searchParams.get('cv'); const photoRef=useRef<HTMLInputElement>(null); const importRef=useRef<HTMLInputElement>(null);
+ const [cv,setCv]=useState<CV>(starter),[design,setDesign]=useState<Design>(defaultDesign),[template,setTemplate]=useState('professional'),[tab,setTab]=useState<'editor'|'templates'|'designer'|'ai'|'import'>('editor');
+ const [jd,setJd]=useState(''),[aiOutput,setAiOutput]=useState(''),[aiAction,setAiAction]=useState<AIAction|null>(null),[aiSettings,setAiSettings]=useState<AISettings>(defaultAI),[busy,setBusy]=useState(false),[saveState,setSaveState]=useState<'saved'|'saving'|'unsaved'>('saved'),[sectionOrder,setSectionOrder]=useState<SectionKey[]>(defaultSectionOrder),[online,setOnline]=useState(true),[importing,setImporting]=useState(false),[importMessage,setImportMessage]=useState('');
+ useEffect(()=>{setOnline(navigator.onLine);const on=()=>setOnline(true),off=()=>setOnline(false);window.addEventListener('online',on);window.addEventListener('offline',off);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>undefined);return()=>{window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
+ useEffect(()=>{const id=requestedId||'cv-1';const raw=localStorage.getItem(`ai-cv-builder-${id}`);if(raw){try{const data=JSON.parse(raw);if(data.cv)setCv({...starter,...data.cv,id});if(data.design)setDesign({...defaultDesign,...data.design});if(data.template)setTemplate(data.template);if(data.aiSettings)setAiSettings({...defaultAI,...data.aiSettings});if(Array.isArray(data.sectionOrder))setSectionOrder(data.sectionOrder);setSaveState('saved');return}catch{}}const legacy=localStorage.getItem(LEGACY_DRAFT_KEY);if(!requestedId&&legacy){try{const data=JSON.parse(legacy);if(data.cv)setCv({...starter,...data.cv});if(data.design)setDesign({...defaultDesign,...data.design});if(data.template)setTemplate(data.template);if(Array.isArray(data.sectionOrder))setSectionOrder(data.sectionOrder);setSaveState('saved');return}catch{}}setCv(requestedId?blankCV(id):starter);setDesign(defaultDesign);setTemplate('professional');setAiSettings(defaultAI);setSectionOrder(defaultSectionOrder);setSaveState('unsaved')},[requestedId]);
+ const selected=useMemo(()=>templates.find(t=>t.id===template)||templates[0],[template]); const wordCount=useMemo(()=>[cv.summary,...cv.experience,...cv.education,...cv.skills,...cv.projects,...cv.certifications].join(' ').trim().split(/\s+/).filter(Boolean).length,[cv]);
+ const update=<K extends keyof CV>(key:K,value:CV[K])=>{setCv(p=>({...p,[key]:value}));setSaveState('unsaved')}; const updateDesign=(p:Partial<Design>)=>{setDesign(d=>({...d,...p}));setSaveState('unsaved')}; const updateAI=(p:Partial<AISettings>)=>{setAiSettings(a=>({...a,...p}));setSaveState('unsaved')};
+ function persist(currentCV=cv,currentDesign=design,currentTemplate=template,currentOrder=sectionOrder,currentAI=aiSettings){const id=currentCV.id||`cv-${Date.now()}`;const saved={...currentCV,id};localStorage.setItem(`ai-cv-builder-${id}`,JSON.stringify({cv:saved,design:currentDesign,template:currentTemplate,sectionOrder:currentOrder,aiSettings:currentAI}));const current=readIndex();const entry={id,name:saved.name||'Untitled CV',role:saved.role||'Professional Title',updatedAt:new Date().toISOString()};localStorage.setItem(CV_INDEX_KEY,JSON.stringify(current.some(x=>x.id===id)?current.map(x=>x.id===id?entry:x):[entry,...current]));if(id!==currentCV.id)setCv(saved)}
+ useEffect(()=>{if(saveState!=='unsaved')return;const timer=window.setTimeout(()=>{setSaveState('saving');persist();setSaveState('saved')},700);return()=>window.clearTimeout(timer)},[cv,design,template,sectionOrder,aiSettings,saveState]);
+ function saveDraft(){setSaveState('saving');persist();setSaveState('saved')} function newCV(){const id=`cv-${Date.now()}`,fresh=blankCV(id);setCv(fresh);setDesign(defaultDesign);setTemplate('professional');setSectionOrder(defaultSectionOrder);setAiSettings(defaultAI);setTab('editor');setAiOutput('');persist(fresh,defaultDesign,'professional',defaultSectionOrder,defaultAI);router.push(`/?cv=${id}`)}
+ function selectTemplate(id:string){const t=templates.find(x=>x.id===id)!;setTemplate(id);updateDesign({accent:t.accent,columns:t.columns})} function moveSection(index:number,direction:-1|1){const next=[...sectionOrder],target=index+direction;if(target<0||target>=next.length)return;[next[index],next[target]]=[next[target],next[index]];setSectionOrder(next);setSaveState('unsaved')} function resetDesign(){setDesign(defaultDesign);setSectionOrder(defaultSectionOrder);setTemplate('professional');setSaveState('unsaved')}
+ async function askAI(action:AIAction){if(['tailor','cover','ats'].includes(action)&&jd.trim().length<30){setAiAction(action);setAiOutput('Please paste a real job description (at least 30 characters) for a useful grounded result.');return}setBusy(true);setAiAction(action);setAiOutput('Generating a clean, professional result…');try{const res=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,cv,jobDescription:jd,settings:aiSettings})});const data=await res.json();if(!res.ok)throw new Error(data.error||'AI request failed.');setAiOutput(cleanAIText(data.text||'No suggestion returned.'))}catch(error){setAiOutput(error instanceof Error?error.message:'Gemini AI request failed.')}finally{setBusy(false)}}
+ function applyAI(){if(!aiOutput||!aiAction||['ats','cover','tailor'].includes(aiAction))return;if(aiAction==='summary')update('summary',cleanAIText(aiOutput));if(aiAction==='experience')update('experience',splitLines(aiOutput));if(aiAction==='skills')update('skills',splitLines(aiOutput).flatMap(x=>x.split(',')).map(x=>x.trim()).filter(Boolean))}
+ async function handlePhoto(file?:File){if(!file)return;if(!file.type.startsWith('image/')||file.size>8*1024*1024){setImportMessage('Please choose a JPG, PNG or WebP image up to 8MB.');return}try{update('photo',await compressImage(file));setImportMessage('Profile photo added and optimized locally.')}catch(e){setImportMessage(e instanceof Error?e.message:'Could not process photo.')}}
+ function parseTextToCV(text:string,base=cv):CV{const normalized=text.replace(/\r/g,'').replace(/\t/g,' ').replace(/ +/g,' ').trim();const lines=normalized.split('\n').map(x=>x.trim()).filter(Boolean);const email=normalized.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/)?.[0]||base.email;const phone=normalized.match(/(?:\+?\d[\d ()-]{7,}\d)/)?.[0]||base.phone;const headings:Record<string,string>={summary:'summary',profile:'summary',experience:'experience',employment:'experience',work:'experience',education:'education',skills:'skills',projects:'projects',certifications:'certifications',certificates:'certifications',languages:'languages',interests:'interests'};const sections:Record<string,string[]>={};let current='summary';for(const line of lines){const key=Object.keys(headings).find(h=>line.toLowerCase().replace(/[:\-]/g,'')===h);if(key){current=headings[key];continue}(sections[current] ||= []).push(line)}const name=lines.find(x=>x.length>=3&&x.length<60&&!x.includes('@')&&!/^\+?\d/.test(x)&&!Object.keys(headings).includes(x.toLowerCase()))||base.name;const role=lines.find(x=>/developer|engineer|manager|designer|accountant|teacher|analyst|consultant|director|specialist|officer/i.test(x))||base.role;return {...base,name,role,email,phone,summary:sections.summary?.join(' ')||base.summary,experience:sections.experience?.slice(0,12)||base.experience,education:sections.education?.slice(0,8)||base.education,skills:sections.skills?.join(',').split(/[,;|]/).map(x=>x.trim()).filter(Boolean)||base.skills,projects:sections.projects?.slice(0,12)||base.projects,certifications:sections.certifications?.slice(0,8)||base.certifications,languages:sections.languages?.slice(0,8)||base.languages,interests:sections.interests?.slice(0,8)||base.interests}}
+ async function importFile(file?:File){if(!file)return;setImporting(true);setImportMessage(`Reading ${file.name}…`);try{const ext=file.name.toLowerCase().split('.').pop();if(ext==='json'){const data=JSON.parse(await file.text()),imported=data.cv||data;setCv({...starter,...imported,id:cv.id});if(data.design)setDesign({...defaultDesign,...data.design});if(data.template)setTemplate(data.template);setSaveState('unsaved');setImportMessage('CV backup imported successfully.');return}if(ext==='txt'||ext==='md'){setCv(parseTextToCV(await file.text()));setSaveState('unsaved');setImportMessage('Text CV imported. Review each section.');return}if(ext==='docx'){const mammoth=await import('mammoth');const result=await mammoth.default.extractRawText({arrayBuffer:await file.arrayBuffer()});setCv(parseTextToCV(result.value));setSaveState('unsaved');setImportMessage('Word CV imported. Review parsed sections.');return}if(ext==='pdf'){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()),disableWorker:true}).promise;let text='';for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i),content=await page.getTextContent();text+=content.items.map((item:any)=>'str'in item?item.str:'').join(' ')+'\n'}if(!text.trim())throw new Error('This PDF appears to be scanned/image-only. Use a text PDF or enter details manually.');setCv(parseTextToCV(text));setSaveState('unsaved');setImportMessage('PDF text imported. Review parsed sections.');return}throw new Error('Supported formats: PDF, DOCX, TXT, MD or JSON backup.')}catch(error){setImportMessage(error instanceof Error?error.message:'Import failed.')}finally{setImporting(false)}}
+ function downloadBlob(blob:Blob,name:string){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)} function exportJSON(){downloadBlob(new Blob([JSON.stringify({cv,design,template,sectionOrder,aiSettings},null,2)],{type:'application/json'}),`${(cv.name||'cv').replace(/[^a-z0-9]+/gi,'-').toLowerCase()}-backup.json`)} function exportPDF(){document.title=`${cv.name||'CV'} - CV`;window.print();window.setTimeout(()=>{document.title='AI CV Builder'},1500)}
+ async function exportDOCX(){setImportMessage('Preparing Word document…');try{const {Document,Packer,Paragraph,TextRun,HeadingLevel,AlignmentType}=await import('docx');const children:any[]=[new Paragraph({text:cv.name||'Your Name',heading:HeadingLevel.TITLE}),new Paragraph({text:cv.role||'Professional Title'}),new Paragraph({text:[cv.location,cv.phone,cv.email,cv.linkedin,cv.website].filter(Boolean).join(' · '),alignment:AlignmentType.LEFT})];const add=(title:string,items:string[],bullets=false)=>{if(!items.length)return;children.push(new Paragraph({text:title,heading:HeadingLevel.HEADING_1}));items.forEach(item=>children.push(new Paragraph({children:[new TextRun(item)],bullet:bullets?{level:0}:undefined})))};if(cv.summary)add('Professional Summary',[cv.summary]);add('Experience',cv.experience,true);add('Projects',cv.projects);add('Skills',cv.skills.length?[cv.skills.join(' • ')]:[]);add('Education',cv.education);add('Certifications',cv.certifications);add('Languages',cv.languages);add('Interests',cv.interests);const doc=new Document({sections:[{children}]});downloadBlob(await Packer.toBlob(doc),`${(cv.name||'cv').replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.docx`);setImportMessage('Word document downloaded.')}catch(error){setImportMessage(error instanceof Error?error.message:'DOCX export failed.')}}
+ function renderSection(key:SectionKey){if(key==='profile')return <ResumeSection key={key} title="PROFILE"><p>{cv.summary||'Add a professional summary.'}</p></ResumeSection>;const map:Record<string,{title:string;values:string[];bullets?:boolean}>={experience:{title:'EXPERIENCE',values:cv.experience,bullets:true},projects:{title:'PROJECTS',values:cv.projects},skills:{title:'SKILLS',values:cv.skills},education:{title:'EDUCATION',values:cv.education},certifications:{title:'CERTIFICATIONS',values:cv.certifications},languages:{title:'LANGUAGES',values:cv.languages},interests:{title:'INTERESTS',values:cv.interests}};const item=map[key];if(!item||!item.values.length)return null;return <ResumeSection key={key} title={item.title}>{item.values.map((x,i)=>item.bullets?<div className="bullet" key={`${key}-${i}`}>• {x}</div>:<p key={`${key}-${i}`}>{x}</p>)}</ResumeSection>}
+ const mainKeys=sectionOrder.filter(k=>['profile','experience','projects'].includes(k)),sideKeys=sectionOrder.filter(k=>['skills','education','certifications','languages','interests'].includes(k));const photoClass=`photo-${cv.photoShape}`,photoStyle={width:`${cv.photoSize}px`,height:`${cv.photoSize}px`};
+ return <main className="app-shell"><header className="topbar"><div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Build. Customize. Get hired.</span></div></div><div className={`connection ${online?'online':'offline'}`}>{online?<Wifi size={13}/>:<WifiOff size={13}/>} {online?'Online':'Offline mode'}</div><div className="save-indicator"><span className={`status-dot ${saveState}`}></span>{saveState==='saving'?'Saving…':saveState==='unsaved'?'Unsaved changes':'All changes saved'}</div><div className="top-actions"><button className="ghost" onClick={()=>router.push('/dashboard')}><FolderOpen size={16}/> My CVs</button><button className="ghost" onClick={newCV}><Plus size={16}/> New CV</button><button className="ghost" onClick={saveDraft}><Save size={16}/> Save</button><button className="primary" onClick={exportPDF}><Printer size={16}/> PDF</button><button className="ghost" onClick={exportDOCX}><FileText size={16}/> DOCX</button></div></header>
+ <section className="workspace"><aside className="sidebar"><nav className="tabs">{([['editor','Editor',FileText],['templates','Templates',LayoutTemplate],['designer','Design',Palette],['ai','AI Assistant',Sparkles],['import','Import',Upload]] as const).map(([id,label,Icon])=><button key={id} onClick={()=>setTab(id)} className={tab===id?'active':''}><Icon size={15}/><span>{label}</span></button>)}</nav>
+ {tab==='editor'&&<div className="panel editor-panel"><div className="panel-heading"><div><strong>CV Content</strong><span>Everything updates live and saves locally.</span></div><span className="word-count">{wordCount} words</span></div><div className="photo-editor"><div className="photo-preview" style={photoStyle}>{cv.photo?<img src={cv.photo} alt="Profile" className={photoClass}/>:<span>{cv.name?cv.name.split(' ').map(x=>x[0]).slice(0,2).join(''):'CV'}</span>}</div><div><strong>Profile photo</strong><small>JPG, PNG or WebP · max 8MB</small><div className="inline-actions"><button className="ghost small" onClick={()=>photoRef.current?.click()}><ImagePlus size={14}/>{cv.photo?'Change':'Upload'}</button>{cv.photo&&<button className="danger small" onClick={()=>update('photo','')}><X size={14}/>Remove</button>}</div></div></div><input ref={photoRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>handlePhoto(e.target.files?.[0])}/><label>Full name<input value={cv.name} onChange={e=>update('name',e.target.value)} placeholder="Your full name"/></label><label>Professional title<input value={cv.role} onChange={e=>update('role',e.target.value)} placeholder="e.g. Software Engineer"/></label><div className="two"><label>Email<input type="email" value={cv.email} onChange={e=>update('email',e.target.value)} placeholder="you@email.com"/></label><label>Phone<input value={cv.phone} onChange={e=>update('phone',e.target.value)} placeholder="+92…"/></label></div><div className="two"><label>Location<input value={cv.location} onChange={e=>update('location',e.target.value)} placeholder="City, Country"/></label><label>LinkedIn<input value={cv.linkedin} onChange={e=>update('linkedin',e.target.value)} placeholder="linkedin.com/in/…"/></label></div><label>Website / Portfolio<input value={cv.website} onChange={e=>update('website',e.target.value)} placeholder="yourportfolio.com"/></label><SectionEditor title="Professional Summary" value={cv.summary} onChange={v=>update('summary',v)} placeholder="2–4 lines describing your strongest professional value…"/><SectionEditor title="Experience" value={cv.experience.join('\n')} onChange={v=>update('experience',v.split('\n').map(x=>x.trim()).filter(Boolean))} placeholder="One achievement or responsibility per line"/><SectionEditor title="Education" value={cv.education.join('\n')} onChange={v=>update('education',v.split('\n').map(x=>x.trim()).filter(Boolean))} placeholder="Degree — Institution — Year"/><SectionEditor title="Skills" value={cv.skills.join(', ')} onChange={v=>update('skills',v.split(',').map(x=>x.trim()).filter(Boolean))} placeholder="React, TypeScript, SQL…"/><SectionEditor title="Projects" value={cv.projects.join('\n')} onChange={v=>update('projects',v.split('\n').map(x=>x.trim()).filter(Boolean))} placeholder="Project — what you built and outcome"/><SectionEditor title="Certifications" value={cv.certifications.join('\n')} onChange={v=>update('certifications',v.split('\n').map(x=>x.trim()).filter(Boolean))} placeholder="Certification — Issuer — Year"/><SectionEditor title="Languages" value={cv.languages.join('\n')} onChange={v=>update('languages',v.split('\n').map(x=>x.trim()).filter(Boolean))} placeholder="English — Professional"/><SectionEditor title="Interests" value={cv.interests.join(', ')} onChange={v=>update('interests',v.split(',').map(x=>x.trim()).filter(Boolean))} placeholder="Technology, volunteering, sports…"/></div>}
+ {tab==='templates'&&<div className="template-grid"><div className="panel-heading full"><div><strong>Templates</strong><span>12 professional starting points. Your content stays safe.</span></div></div>{templates.map(t=><button key={t.id} className={`template-card ${template===t.id?'selected':''}`} onClick={()=>selectTemplate(t.id)}><div className="mini-preview" style={{'--accent':t.accent} as React.CSSProperties}><b></b><i></i><i></i><i></i></div><div className="template-meta"><strong>{t.name}</strong>{template===t.id&&<Check size={14}/>}</div><span>{t.description}</span></button>)}</div>}
+ {tab==='designer'&&<div className="panel"><div className="design-title"><Settings2 size={18}/><div><strong>Design Studio</strong><span>Professional formatting without losing content.</span></div></div><div className="designer-actions"><span>Current: <b>{selected.name}</b></span><button className="text-button" onClick={resetDesign}><RotateCcw size={13}/>Reset</button></div><label>Accent color<input type="color" value={design.accent} onChange={e=>updateDesign({accent:e.target.value})}/></label><label>Font family<select value={design.font} onChange={e=>updateDesign({font:e.target.value})}><option>Inter</option><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Tahoma</option><option>Times New Roman</option></select></label><label>Font size <b>{design.size}px</b><input type="range" min="9" max="13" step="0.5" value={design.size} onChange={e=>updateDesign({size:Number(e.target.value)})}/></label><label>Section spacing <b>{design.spacing.toFixed(1)}</b><input type="range" min="0.6" max="1.8" step="0.1" value={design.spacing} onChange={e=>updateDesign({spacing:Number(e.target.value)})}/></label><div className="choice"><span>Columns</span><button className={design.columns===1?'chosen':''} onClick={()=>updateDesign({columns:1})}>1 column</button><button className={design.columns===2?'chosen':''} onClick={()=>updateDesign({columns:2})}>2 columns</button></div><div className="choice"><span>Profile photo</span><button className={design.showAvatar?'chosen':''} onClick={()=>updateDesign({showAvatar:!design.showAvatar})}>{design.showAvatar?'Shown':'Hidden'}</button></div><div className="choice"><span>Photo position</span>{(['left','right','top','bottom'] as PhotoPosition[]).map(x=><button key={x} className={cv.photoPosition===x?'chosen':''} onClick={()=>update('photoPosition',x)}>{x}</button>)}</div><div className="choice"><span>Photo shape</span>{(['circle','rounded','square'] as PhotoShape[]).map(x=><button key={x} className={cv.photoShape===x?'chosen':''} onClick={()=>update('photoShape',x)}>{x}</button>)}</div><label>Photo size <b>{cv.photoSize}px</b><input type="range" min="54" max="150" step="2" value={cv.photoSize} onChange={e=>update('photoSize',Number(e.target.value))}/></label><div className="section-order"><strong>Section order</strong>{sectionOrder.map((s,index)=><div key={s}><span>{sectionLabels[s]}</span><button disabled={index===0} onClick={()=>moveSection(index,-1)}><ArrowUp size={13}/></button><button disabled={index===sectionOrder.length-1} onClick={()=>moveSection(index,1)}><ArrowDown size={13}/></button></div>)}</div></div>}
+ {tab==='ai'&&<div className="panel ai-panel"><div className="ai-box"><WandSparkles size={18}/><div><strong>Professional AI CV Assistant</strong><span>Grounded in your CV. No invented claims. CV-ready plain text — no markdown stars.</span></div></div><div className="ai-settings"><label>Tone<select value={aiSettings.tone} onChange={e=>updateAI({tone:e.target.value})}><option>Professional</option><option>Confident</option><option>Executive</option><option>Friendly</option><option>Technical</option></select></label><label>Length<select value={aiSettings.length} onChange={e=>updateAI({length:e.target.value})}><option>Concise</option><option>Balanced</option><option>Detailed</option></select></label><label>Audience<select value={aiSettings.audience} onChange={e=>updateAI({audience:e.target.value})}><option>Recruiters / ATS</option><option>Hiring Manager</option><option>Executive</option><option>Academic</option></select></label><label>Language<select value={aiSettings.language} onChange={e=>updateAI({language:e.target.value})}><option>English</option><option>Urdu</option><option>Roman Urdu</option></select></label><label>Focus<select value={aiSettings.focus} onChange={e=>updateAI({focus:e.target.value})}><option>Achievements & impact</option><option>Skills & technical depth</option><option>Leadership</option><option>ATS keywords</option></select></label></div><div className="ai-actions"><button disabled={busy} onClick={()=>askAI('summary')} className="ai-btn">Improve Summary</button><button disabled={busy} onClick={()=>askAI('experience')} className="ai-btn">Rewrite Experience</button><button disabled={busy} onClick={()=>askAI('skills')} className="ai-btn">Improve Skills</button><button disabled={busy} onClick={()=>askAI('tailor')} className="ai-btn">Tailor to Job</button><button disabled={busy} onClick={()=>askAI('cover')} className="ai-btn">Cover Letter</button><button disabled={busy} onClick={()=>askAI('ats')} className="ai-btn primary-ai">ATS Analysis</button></div><label>Job description<textarea rows={7} value={jd} onChange={e=>setJd(e.target.value)} placeholder="Paste the complete job description here…"/></label><div className="result-head"><strong>{busy?'AI is working…':'AI result'}</strong><div>{aiOutput&&!busy&&aiAction&&!['ats','cover','tailor'].includes(aiAction)&&<button className="text-button" onClick={applyAI}><Check size={13}/>Apply clean text</button>}{aiOutput&&!busy&&<button className="text-button" onClick={()=>setAiOutput('')}><X size={13}/>Clear</button>}</div></div><pre className="ai-result">{aiOutput||'Your professional suggestion will appear here.'}</pre></div>}
+ {tab==='import'&&<div className="panel import-panel"><div className="import-hero"><Upload size={22}/><strong>Import an existing CV</strong><span>Bring your current PDF, Word, TXT, Markdown or AI CV Builder backup into the editor.</span><button className="primary" onClick={()=>importRef.current?.click()} disabled={importing}><Upload size={15}/>{importing?'Importing…':'Choose CV file'}</button><input ref={importRef} hidden type="file" accept=".pdf,.docx,.txt,.md,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json,text/plain" onChange={e=>importFile(e.target.files?.[0])}/></div><div className="import-note"><strong>Safe workflow</strong><span>Imported content is parsed into editable fields. Your existing saved CV is preserved until you save.</span></div>{importMessage&&<div className="notice">{importMessage}</div>}<div className="backup-actions"><button className="ghost" onClick={exportJSON}><FileArchive size={15}/>Download backup</button><button className="ghost" onClick={()=>importRef.current?.click()}><Upload size={15}/>Restore backup</button></div></div>}
+ </aside><section className="preview-area"><div className="preview-toolbar"><div><span className="pill">A4</span><span className="muted">{selected.name} · {design.columns} column{design.columns>1?'s':''}</span></div><div><span className="muted">Live preview</span><button className="ghost" onClick={exportPDF}><Printer size={15}/>PDF</button><button className="ghost" onClick={exportDOCX}><FileText size={15}/>DOCX</button></div></div><div className="paper-wrap"><article className={`paper cols-${design.columns} template-${selected.style}`} style={{'--accent':design.accent,'--resume-font':design.font,'--resume-size':`${design.size}px`,'--resume-space':design.spacing} as React.CSSProperties}><header className={`resume-head photo-pos-${cv.photoPosition}`}><div className="resume-identity"><h1>{cv.name||'Your Name'}</h1><h2>{cv.role||'Professional Title'}</h2><p className="contact">{[cv.location,cv.phone,cv.email,cv.linkedin,cv.website].filter(Boolean).join(' · ')||'Location · Phone · Email'}</p></div>{design.showAvatar&&<div className="avatar" style={photoStyle}>{cv.photo?<img src={cv.photo} alt={`${cv.name||'Profile'} profile`} className={photoClass}/>:<span>{cv.name?cv.name.split(' ').map(x=>x[0]).slice(0,2).join(''):'CV'}</span>}</div>}</header><div className="resume-columns"><div className="resume-main">{mainKeys.map(renderSection)}</div><div className="resume-side">{sideKeys.map(renderSection)}</div></div></article></div></section></section></main>;
 }
-
-export default function Home() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const requestedId = searchParams.get('cv');
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [cv, setCv] = useState<CV>(starter);
-  const [design, setDesign] = useState<Design>(defaultDesign);
-  const [template, setTemplate] = useState('professional');
-  const [tab, setTab] = useState<'editor' | 'templates' | 'designer' | 'ai'>('editor');
-  const [jd, setJd] = useState('');
-  const [aiOutput, setAiOutput] = useState('');
-  const [aiAction, setAiAction] = useState<AIAction | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const [sectionOrder, setSectionOrder] = useState<SectionKey[]>(defaultSectionOrder);
-  const [writing, setWriting] = useState<WritingSettings>(defaultWriting);
-
-  useEffect(() => {
-    const id = requestedId || 'cv-1';
-    const raw = localStorage.getItem(`ai-cv-builder-${id}`);
-    if (raw) {
-      try {
-        const data = JSON.parse(raw);
-        if (data.cv) setCv({ ...starter, ...data.cv, id });
-        if (data.design) setDesign({ ...defaultDesign, ...data.design });
-        if (data.template) setTemplate(data.template);
-        if (Array.isArray(data.sectionOrder)) setSectionOrder(data.sectionOrder);
-        setSaveState('saved');
-        return;
-      } catch {}
-    }
-    const legacy = localStorage.getItem(LEGACY_DRAFT_KEY);
-    if (!requestedId && legacy) {
-      try {
-        const data = JSON.parse(legacy);
-        if (data.cv) setCv({ ...starter, ...data.cv });
-        if (data.design) setDesign({ ...defaultDesign, ...data.design });
-        if (data.template) setTemplate(data.template);
-        if (Array.isArray(data.sectionOrder)) setSectionOrder(data.sectionOrder);
-        setSaveState('saved');
-        return;
-      } catch {}
-    }
-    setCv(requestedId ? blankCV(id) : starter);
-    setDesign(defaultDesign);
-    setTemplate('professional');
-    setSectionOrder(defaultSectionOrder);
-    setSaveState('unsaved');
-  }, [requestedId]);
-
-  const selected = useMemo(() => templates.find(t => t.id === template) ?? templates[0], [template]);
-  const wordCount = useMemo(() => [cv.summary, ...cv.experience, ...cv.education, ...cv.skills, ...cv.projects].join(' ').trim().split(/\s+/).filter(Boolean).length, [cv]);
-
-  const update = <K extends keyof CV>(key: K, value: CV[K]) => { setCv(prev => ({ ...prev, [key]: value })); setSaveState('unsaved'); };
-  const updateDesign = <K extends keyof Design>(key: K, value: Design[K]) => { setDesign(prev => ({ ...prev, [key]: value })); setSaveState('unsaved'); };
-
-  function persist(currentCV = cv, currentDesign = design, currentTemplate = template, currentOrder = sectionOrder) {
-    const id = currentCV.id || `cv-${Date.now()}`;
-    const savedCV = { ...currentCV, id };
-    localStorage.setItem(`ai-cv-builder-${id}`, JSON.stringify({ cv: savedCV, design: currentDesign, template: currentTemplate, sectionOrder: currentOrder }));
-    const current = readIndex();
-    const entry: SavedCV = { id, name: savedCV.name || 'Untitled CV', role: savedCV.role || 'Professional Title', updatedAt: new Date().toISOString() };
-    const next = current.some(item => item.id === id) ? current.map(item => item.id === id ? entry : item) : [entry, ...current];
-    localStorage.setItem(CV_INDEX_KEY, JSON.stringify(next));
-    if (id !== currentCV.id) setCv(savedCV);
-  }
-
-  function saveDraft() { setSaveState('saving'); persist(); setSaveState('saved'); }
-
-  useEffect(() => {
-    if (saveState !== 'unsaved') return;
-    const timer = window.setTimeout(() => { setSaveState('saving'); persist(); setSaveState('saved'); }, 700);
-    return () => window.clearTimeout(timer);
-  }, [cv, design, template, sectionOrder, saveState]);
-
-  function newCV() {
-    const id = `cv-${Date.now()}`;
-    const fresh = blankCV(id);
-    setCv(fresh); setDesign(defaultDesign); setTemplate('professional'); setSectionOrder(defaultSectionOrder); setWriting(defaultWriting); setAiOutput(''); setAiAction(null); setSaveState('saved'); setTab('editor');
-    persist(fresh, defaultDesign, 'professional', defaultSectionOrder);
-    router.push(`/?cv=${id}`);
-  }
-
-  function selectTemplate(id: string) {
-    const t = templates.find(x => x.id === id)!;
-    setTemplate(id); setDesign(d => ({ ...d, accent: t.accent, columns: t.columns })); setSaveState('unsaved');
-  }
-
-  async function askAI(action: AIAction) {
-    if (busy) return;
-    if ((action === 'ats' || action === 'tailor' || action === 'cover-letter') && jd.trim().length < 30) {
-      setAiAction(action); setAiOutput('Please paste a detailed job description (at least 30 characters) so the AI can make a useful, job-specific recommendation.'); return;
-    }
-    setBusy(true); setAiAction(action); setAiOutput('Generating a professional, CV-grounded result…');
-    try {
-      const res = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, cv, jobDescription: jd, writingSettings: writing }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'AI request failed.');
-      setAiOutput(data.text || 'No suggestion returned.');
-    } catch (error) {
-      setAiOutput(error instanceof Error ? error.message : 'Gemini AI request failed.');
-    } finally { setBusy(false); }
-  }
-
-  function applyAI() {
-    if (!aiOutput || !aiAction) return;
-    if (aiAction === 'summary') update('summary', clampText(aiOutput, 1400));
-    if (aiAction === 'experience') update('experience', aiOutput.split(/\r?\n/).map(x => x.replace(/^[-•*]\s*/, '').trim()).filter(Boolean));
-    if (aiAction === 'skills') update('skills', aiOutput.split(/[,\n•]/).map(x => x.trim()).filter(Boolean));
-  }
-
-  async function onPhotoChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try { update('photo', await compressPhoto(file)); }
-    catch (error) { setAiOutput(error instanceof Error ? error.message : 'Photo upload failed.'); setTab('editor'); }
-    event.target.value = '';
-  }
-
-  function moveSection(index: number, direction: -1 | 1) {
-    const next = [...sectionOrder]; const target = index + direction;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    setSectionOrder(next); setSaveState('unsaved');
-  }
-
-  function resetDesign() { setDesign(defaultDesign); setSectionOrder(defaultSectionOrder); setTemplate('professional'); setSaveState('unsaved'); }
-  function printCV() { window.print(); }
-  function photoNode() {
-    const initials = cv.name ? cv.name.split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase() : 'CV';
-    return cv.photo ? <img className={`resume-photo photo-${design.photoShape}`} src={cv.photo} alt="Profile" /> : <div className={`avatar photo-${design.photoShape}`}>{initials}</div>;
-  }
-
-  const renderSection = (key: SectionKey) => {
-    if (key === 'profile') return <ResumeSection key={key} title="PROFILE"><p>{cv.summary || 'Add a professional summary from the editor.'}</p></ResumeSection>;
-    if (key === 'experience') return <ResumeSection key={key} title="EXPERIENCE">{cv.experience.length ? cv.experience.map((x,i)=><div className="bullet" key={i}>• {x}</div>) : <p>Add your experience.</p>}</ResumeSection>;
-    if (key === 'projects') return <ResumeSection key={key} title="PROJECTS">{cv.projects.length ? cv.projects.map((x,i)=><p key={i}>{x}</p>) : <p>Add relevant projects.</p>}</ResumeSection>;
-    if (key === 'skills') return <ResumeSection key={key} title="SKILLS"><div className="chips">{cv.skills.length ? cv.skills.map((x,i)=><span key={`${x}-${i}`}>{x}</span>) : <span className="placeholder-chip">Add skills</span>}</div></ResumeSection>;
-    return <ResumeSection key={key} title="EDUCATION">{cv.education.length ? cv.education.map((x,i)=><p key={i}>{x}</p>) : <p>Add your education.</p>}</ResumeSection>;
-  };
-
-  const mainKeys = sectionOrder.filter(key => ['profile', 'experience', 'projects'].includes(key));
-  const sideKeys = sectionOrder.filter(key => ['skills', 'education'].includes(key));
-
-  return <main className="app-shell">
-    <header className="topbar">
-      <div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Build. Customize. Get hired.</span></div></div>
-      <div className="save-indicator"><span className={`status-dot ${saveState}`}></span>{saveState === 'saving' ? 'Saving…' : saveState === 'unsaved' ? 'Unsaved changes' : 'All changes saved'}</div>
-      <div className="top-actions"><button className="ghost" onClick={() => router.push('/dashboard')}><FolderOpen size={16}/> My CVs</button><button className="ghost" onClick={newCV}><Plus size={16}/> New CV</button><button className="ghost" onClick={saveDraft}><Save size={16}/> Save</button><button className="primary" onClick={printCV}><Printer size={16}/> Export PDF</button></div>
-    </header>
-    <section className="workspace">
-      <aside className="sidebar">
-        <nav className="tabs">{([['editor','Editor',FileText],['templates','Templates',LayoutTemplate],['designer','Design',Palette],['ai','AI Assistant',Sparkles]] as const).map(([id,label,Icon]) => <button key={id} onClick={() => setTab(id)} className={tab === id ? 'active' : ''}><Icon size={16}/>{label}</button>)}</nav>
-        {tab === 'editor' && <div className="panel editor-panel">
-          <div className="panel-heading"><div><strong>CV Content</strong><span>Write once. Preview updates instantly.</span></div><span className="word-count">{wordCount} words</span></div>
-          <div className="photo-card"><div><strong>Profile photo</strong><span>JPG, PNG or WebP · max 5 MB</span></div><div className="photo-actions"><button className="ghost small" onClick={() => fileInput.current?.click()}><Plus size={14}/> {cv.photo ? 'Change photo' : 'Upload photo'}</button>{cv.photo && <button className="ghost small danger" onClick={() => update('photo','')}><X size={14}/> Remove</button>}</div><input ref={fileInput} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={onPhotoChange}/></div>
-          <label>Full name<input value={cv.name} onChange={e => update('name', e.target.value)} placeholder="Your name"/></label>
-          <label>Professional title<input value={cv.role} onChange={e => update('role', e.target.value)} placeholder="e.g. Software Engineer"/></label>
-          <div className="two"><label>Email<input type="email" value={cv.email} onChange={e => update('email', e.target.value)} placeholder="you@email.com"/></label><label>Phone<input value={cv.phone} onChange={e => update('phone', e.target.value)} placeholder="+92…"/></label></div>
-          <label>Location<input value={cv.location} onChange={e => update('location', e.target.value)} placeholder="City, Country"/></label>
-          <SectionEditor title="Professional Summary" value={cv.summary} onChange={v => update('summary', v)} placeholder="2–4 lines describing your strongest professional value…" />
-          <SectionEditor title="Experience" value={cv.experience.join('\n')} onChange={v => update('experience', v.split(/\r?\n/).map(x => x.trim()).filter(Boolean))} placeholder="One achievement per line" />
-          <SectionEditor title="Education" value={cv.education.join('\n')} onChange={v => update('education', v.split(/\r?\n/).map(x => x.trim()).filter(Boolean))} placeholder="Degree — Institution" />
-          <SectionEditor title="Skills" value={cv.skills.join(', ')} onChange={v => update('skills', v.split(',').map(x => x.trim()).filter(Boolean))} placeholder="React, TypeScript, SQL…" />
-          <SectionEditor title="Projects" value={cv.projects.join('\n')} onChange={v => update('projects', v.split(/\r?\n/).map(x => x.trim()).filter(Boolean))} placeholder="One project per line" />
-        </div>}
-        {tab === 'templates' && <div className="template-grid"><div className="panel-heading full"><div><strong>Choose a template</strong><span>Switch layouts without losing your CV content.</span></div></div>{templates.map(t => <button key={t.id} className={`template-card ${template === t.id ? 'selected' : ''}`} onClick={() => selectTemplate(t.id)}><div className="mini-preview" style={{ '--accent': t.accent } as React.CSSProperties}><b></b><i></i><i></i><i></i></div><div className="template-meta"><strong>{t.name}</strong>{template === t.id && <Check size={14}/>}</div><span>{t.description}</span></button>)}<button className="template-card custom" onClick={() => setTab('designer')}><div className="custom-icon">＋</div><strong>Build your template</strong><span>Customize colors, typography, photo and section order.</span></button></div>}
-        {tab === 'designer' && <div className="panel"><div className="design-title"><Settings2 size={18}/><div><strong>Template Designer</strong><span>Every control updates the A4 preview instantly.</span></div></div><div className="designer-actions"><span>Current: <b>{selected.name}</b></span><button className="text-button" onClick={resetDesign}><RotateCcw size={13}/> Reset</button></div><label>Accent color<input type="color" value={design.accent} onChange={e => updateDesign('accent', e.target.value)}/></label><label>Font<select value={design.font} onChange={e => updateDesign('font', e.target.value)}><option>Inter</option><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option></select></label><label>Text size <b>{design.size}px</b><input type="range" min="9" max="14" value={design.size} onChange={e => updateDesign('size', Number(e.target.value))}/></label><label>Section spacing <b>{design.spacing.toFixed(1)}</b><input type="range" min="0.6" max="1.8" step="0.1" value={design.spacing} onChange={e => updateDesign('spacing', Number(e.target.value))}/></label><div className="choice"><span>Columns</span><button className={design.columns === 1 ? 'chosen' : ''} onClick={() => updateDesign('columns', 1)}>1 column</button><button className={design.columns === 2 ? 'chosen' : ''} onClick={() => updateDesign('columns', 2)}>2 columns</button></div><div className="choice"><span>Profile photo</span><button className={design.showAvatar ? 'chosen' : ''} onClick={() => updateDesign('showAvatar', !design.showAvatar)}>{design.showAvatar ? 'Shown' : 'Hidden'}</button></div><div className="choice"><span>Photo position</span>{(['left','right','top','bottom'] as PhotoPosition[]).map(position => <button key={position} className={design.photoPosition === position ? 'chosen' : ''} onClick={() => updateDesign('photoPosition', position)}>{position[0].toUpperCase()+position.slice(1)}</button>)}</div><div className="choice"><span>Photo shape</span>{(['circle','rounded','square'] as PhotoShape[]).map(shape => <button key={shape} className={design.photoShape === shape ? 'chosen' : ''} onClick={() => updateDesign('photoShape', shape)}>{shape[0].toUpperCase()+shape.slice(1)}</button>)}</div><label>Photo size <b>{design.photoSize}px</b><input type="range" min="52" max="120" value={design.photoSize} onChange={e => updateDesign('photoSize', Number(e.target.value))}/></label><div className="section-order"><strong>Section order</strong>{sectionOrder.map((s, index) => <div key={s}><span>{sectionLabels[s]}</span><button disabled={index === 0} onClick={() => moveSection(index, -1)} aria-label={`Move ${sectionLabels[s]} up`}>↑</button><button disabled={index === sectionOrder.length - 1} onClick={() => moveSection(index, 1)} aria-label={`Move ${sectionLabels[s]} down`}>↓</button></div>)}</div></div>}
-        {tab === 'ai' && <div className="panel ai-panel"><div className="ai-box"><WandSparkles size={18}/><div><strong>AI CV Assistant</strong><span>Professional, ATS-aware writing grounded in your actual CV. It must never invent experience, skills, employers or metrics.</span></div></div><div className="writing-settings"><div className="settings-head"><strong>Writing settings</strong><span>Control how every AI result is written.</span></div><div className="two"><label>Tone<select value={writing.tone} onChange={e => setWriting({...writing,tone:e.target.value})}><option>Professional</option><option>Confident</option><option>Executive</option><option>Concise</option><option>Warm</option></select></label><label>Length<select value={writing.length} onChange={e => setWriting({...writing,length:e.target.value})}><option>Short</option><option>Medium</option><option>Detailed</option></select></label><label>Audience<select value={writing.audience} onChange={e => setWriting({...writing,audience:e.target.value})}><option>Recruiters / ATS</option><option>Hiring Manager</option><option>Executive</option><option>General</option></select></label><label>Language<select value={writing.language} onChange={e => setWriting({...writing,language:e.target.value})}><option>English</option><option>Urdu</option></select></label></div><label>Focus<select value={writing.focus} onChange={e => setWriting({...writing,focus:e.target.value})}><option>Achievements</option><option>Responsibilities</option><option>Leadership</option><option>Technical impact</option><option>ATS keywords</option></select></label></div><div className="ai-actions"><button disabled={busy} onClick={() => askAI('summary')} className="ai-btn">Improve summary</button><button disabled={busy} onClick={() => askAI('experience')} className="ai-btn">Rewrite experience</button><button disabled={busy} onClick={() => askAI('skills')} className="ai-btn">Improve skills</button><button disabled={busy} onClick={() => askAI('tailor')} className="ai-btn">Tailor to job</button><button disabled={busy} onClick={() => askAI('cover-letter')} className="ai-btn">Cover letter</button><button disabled={busy} onClick={() => askAI('ats')} className="ai-btn primary-ai">Analyze ATS match</button></div><label>Job description<textarea rows={8} value={jd} onChange={e => setJd(e.target.value)} placeholder="Paste the complete job description here…"/></label><div className="ai-result-wrap"><div className="result-head"><strong>{busy ? 'AI is working…' : 'AI result'}</strong>{aiAction && ['summary','experience','skills'].includes(aiAction) && aiOutput && !busy && <button className="text-button" onClick={applyAI}><Check size={13}/> Apply to CV</button>}</div><pre className="ai-result">{aiOutput || 'Your professional AI suggestions, job tailoring and ATS analysis will appear here.'}</pre></div></div>}
-      </aside>
-      <section className="preview-area"><div className="preview-toolbar"><div><span className="pill">A4</span><span className="muted">{selected.name} · {design.columns} column</span></div><div><span className="muted live-dot">● Live preview</span><button className="ghost" onClick={printCV}><Download size={15}/> Export / Print</button></div></div><div className="paper-wrap"><article className={`paper cols-${design.columns} photo-${design.photoPosition}`} style={{ '--accent': design.accent, '--resume-font': design.font, '--resume-size': `${design.size}px`, '--resume-space': design.spacing, '--photo-size': `${design.photoSize}px` } as React.CSSProperties}>
-        {design.showAvatar && design.photoPosition === 'top' && <div className="photo-slot top">{photoNode()}</div>}
-        <header className={`resume-head photo-${design.photoPosition}`}>
-          {design.showAvatar && design.photoPosition === 'left' && <div className="photo-slot">{photoNode()}</div>}
-          <div className="resume-head-copy"><h1>{cv.name || 'Your Name'}</h1><h2>{cv.role || 'Professional Title'}</h2><p className="contact">{[cv.location, cv.phone, cv.email].filter(Boolean).join(' · ') || 'Location · Phone · Email'}</p></div>
-          {design.showAvatar && design.photoPosition === 'right' && <div className="photo-slot">{photoNode()}</div>}
-        </header>
-        {design.showAvatar && design.photoPosition === 'bottom' && <div className="photo-slot bottom">{photoNode()}</div>}
-        <div className="resume-columns"><div className="resume-main">{mainKeys.map(renderSection)}</div><div className="resume-side">{sideKeys.map(renderSection)}</div></div>
-      </article></div></section>
-    </section>
-  </main>;
-}
-
-function SectionEditor({ title, value, onChange, placeholder }: { title: string; value: string; onChange: (v:string)=>void; placeholder:string }) { return <label><span className="label-row">{title}<small>{value.length} chars</small></span><textarea rows={title === 'Professional Summary' ? 5 : 4} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}/></label>; }
-function ResumeSection({ title, children }: { title: string; children: React.ReactNode }) { return <section className="resume-section"><h3>{title}</h3>{children}</section>; }
+function SectionEditor({title,value,onChange,placeholder}:{title:string;value:string;onChange:(v:string)=>void;placeholder:string}){return <label><span className="label-row">{title}<small>{value.length} chars</small></span><textarea rows={title==='Professional Summary'?5:4} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/></label>}
+function ResumeSection({title,children}:{title:string;children:React.ReactNode}){return <section className="resume-section"><h3>{title}</h3>{children}</section>}

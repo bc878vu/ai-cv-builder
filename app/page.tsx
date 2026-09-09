@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Download, FileText, LayoutTemplate, Plus, Save, Sparkles, WandSparkles, Palette, Settings2, Trash2, GripVertical, Printer } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Download, FileText, LayoutTemplate, Plus, Save, Sparkles, WandSparkles, Palette, Settings2, Trash2, GripVertical, Printer, FolderOpen } from 'lucide-react';
 
 type SectionKey = 'profile' | 'experience' | 'education' | 'skills' | 'projects';
 type CV = { id: string; name: string; role: string; email: string; phone: string; location: string; summary: string; experience: string[]; education: string[]; skills: string[]; projects: string[] };
 type Design = { accent: string; font: string; size: number; spacing: number; columns: 1 | 2; radius: number; showAvatar: boolean };
 type Template = { id: string; name: string; description: string; accent: string; columns: 1 | 2 };
+type SavedCV = { id: string; name: string; role: string; updatedAt: string };
+
+const CV_INDEX_KEY = 'ai-cv-builder-cvs';
+const LEGACY_DRAFT_KEY = 'ai-cv-builder-draft';
 
 const templates: Template[] = [
   { id: 'professional', name: 'Professional', description: 'Clean corporate hierarchy.', accent: '#1d4ed8', columns: 1 },
@@ -22,24 +27,64 @@ const templates: Template[] = [
 const starter: CV = { id: 'cv-1', name: 'Muhammad Ahmed', role: 'Frontend Developer', email: 'example@email.com', phone: '+92 300 0000000', location: 'Lahore, Pakistan', summary: 'Frontend developer focused on building reliable, accessible and high-performance web experiences with React and Next.js.', experience: ['Built responsive React interfaces used across customer-facing workflows.', 'Improved frontend performance, reusable components and accessibility standards.'], education: ['BS Computer Science — University of Lahore'], skills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS'], projects: ['AI CV Builder — designed a template-driven resume editor with AI assistance.'] };
 const defaultDesign: Design = { accent: '#1d4ed8', font: 'Inter', size: 11, spacing: 1, columns: 1, radius: 6, showAvatar: true };
 
+function blankCV(id: string): CV { return { ...starter, id, name: '', role: '', summary: '', experience: [], education: [], skills: [], projects: [] }; }
+
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get('cv');
   const [cv, setCv] = useState<CV>(starter);
   const [design, setDesign] = useState<Design>(defaultDesign);
   const [template, setTemplate] = useState('professional');
   const [tab, setTab] = useState<'editor' | 'templates' | 'designer' | 'ai'>('editor');
   const [jd, setJd] = useState(''); const [aiOutput, setAiOutput] = useState(''); const [busy, setBusy] = useState(false); const [saved, setSaved] = useState(false);
 
-  useEffect(() => { const raw = localStorage.getItem('ai-cv-builder-draft'); if (raw) { try { const data = JSON.parse(raw); setCv(data.cv); setDesign(data.design); setTemplate(data.template); } catch {} } }, []);
+  useEffect(() => {
+    const id = requestedId || 'cv-1';
+    const raw = localStorage.getItem(`ai-cv-builder-${id}`);
+    if (raw) {
+      try { const data = JSON.parse(raw); if (data.cv) setCv({ ...starter, ...data.cv, id }); if (data.design) setDesign({ ...defaultDesign, ...data.design }); if (data.template) setTemplate(data.template); return; } catch {}
+    }
+    const legacy = localStorage.getItem(LEGACY_DRAFT_KEY);
+    if (!requestedId && legacy) {
+      try { const data = JSON.parse(legacy); if (data.cv) setCv({ ...starter, ...data.cv }); if (data.design) setDesign({ ...defaultDesign, ...data.design }); if (data.template) setTemplate(data.template); return; } catch {}
+    }
+    setCv(requestedId ? blankCV(id) : starter);
+    setDesign(defaultDesign);
+    setTemplate('professional');
+  }, [requestedId]);
+
   const selected = useMemo(() => templates.find(t => t.id === template) ?? templates[0], [template]);
   const update = <K extends keyof CV>(key: K, value: CV[K]) => setCv(prev => ({ ...prev, [key]: value }));
-  function saveDraft() { localStorage.setItem('ai-cv-builder-draft', JSON.stringify({ cv, design, template })); setSaved(true); setTimeout(() => setSaved(false), 1800); }
-  function newCV() { setCv({ ...starter, id: `cv-${Date.now()}`, name: '', role: '', summary: '', experience: [], education: [], skills: [], projects: [] }); setSaved(false); }
+
+  function saveDraft() {
+    const id = cv.id || `cv-${Date.now()}`;
+    const savedCV = { ...cv, id };
+    localStorage.setItem(`ai-cv-builder-${id}`, JSON.stringify({ cv: savedCV, design, template }));
+    const current: SavedCV[] = (() => { try { return JSON.parse(localStorage.getItem(CV_INDEX_KEY) || '[]'); } catch { return []; } })();
+    const entry: SavedCV = { id, name: savedCV.name || 'Untitled CV', role: savedCV.role || 'Professional Title', updatedAt: new Date().toISOString() };
+    const next = current.some(item => item.id === id) ? current.map(item => item.id === id ? entry : item) : [entry, ...current];
+    localStorage.setItem(CV_INDEX_KEY, JSON.stringify(next));
+    if (id !== cv.id) setCv(savedCV);
+    setSaved(true); setTimeout(() => setSaved(false), 1800);
+  }
+
+  function newCV() {
+    const id = `cv-${Date.now()}`;
+    const fresh = blankCV(id);
+    setCv(fresh); setDesign(defaultDesign); setTemplate('professional'); setSaved(false); setTab('editor');
+    localStorage.setItem(`ai-cv-builder-${id}`, JSON.stringify({ cv: fresh, design: defaultDesign, template: 'professional' }));
+    const current: SavedCV[] = (() => { try { return JSON.parse(localStorage.getItem(CV_INDEX_KEY) || '[]'); } catch { return []; } })();
+    localStorage.setItem(CV_INDEX_KEY, JSON.stringify([{ id, name: 'Untitled CV', role: 'Professional Title', updatedAt: new Date().toISOString() }, ...current]));
+    router.push(`/?cv=${id}`);
+  }
+
   function selectTemplate(id: string) { const t = templates.find(x => x.id === id)!; setTemplate(id); setDesign(d => ({ ...d, accent: t.accent, columns: t.columns })); }
   async function askAI(action: 'summary' | 'experience' | 'ats') { setBusy(true); setAiOutput('Generating…'); try { const res = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, cv, jobDescription: jd }) }); const data = await res.json(); setAiOutput(data.text || data.error || 'No suggestion returned.'); } catch { setAiOutput('AI is not configured. Add OPENAI_API_KEY to the server environment.'); } finally { setBusy(false); } }
   function printCV() { window.print(); }
 
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Build. Customize. Get hired.</span></div></div><div className="top-actions"><button className="ghost" onClick={newCV}><Plus size={16}/> New CV</button><button className="ghost" onClick={saveDraft}><Save size={16}/> {saved ? 'Saved' : 'Save'}</button><button className="primary" onClick={printCV}><Printer size={16}/> Export / Print</button></div></header>
+    <header className="topbar"><div className="brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Build. Customize. Get hired.</span></div></div><div className="top-actions"><button className="ghost" onClick={() => router.push('/dashboard')}><FolderOpen size={16}/> My CVs</button><button className="ghost" onClick={newCV}><Plus size={16}/> New CV</button><button className="ghost" onClick={saveDraft}><Save size={16}/> {saved ? 'Saved' : 'Save'}</button><button className="primary" onClick={printCV}><Printer size={16}/> Export / Print</button></div></header>
     <section className="workspace">
       <aside className="sidebar">
         <nav className="tabs">{([['editor','Editor',FileText],['templates','Templates',LayoutTemplate],['designer','Design',Palette],['ai','AI Assistant',Sparkles]] as const).map(([id,label,Icon]) => <button key={id} onClick={() => setTab(id)} className={tab === id ? 'active' : ''}><Icon size={16}/>{label}</button>)}</nav>

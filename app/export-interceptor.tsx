@@ -13,12 +13,18 @@ function downloadBlob(blob: Blob, name: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function safeFileName() {
+  return (document.querySelector('.resume-head h1')?.textContent || 'cv')
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase() || 'cv';
+}
+
 export default function ExportInterceptor() {
   useEffect(() => {
     let disposed = false;
 
-    // PDF.js 6 no longer accepts the old disableWorker option used by the
-    // legacy importer. Give it a stable local worker URL before any import.
+    // Configure PDF.js once, using the worker generated locally during install.
     import('pdfjs-dist/legacy/build/pdf.mjs')
       .then((pdfjs) => {
         if (!disposed) pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
@@ -30,21 +36,25 @@ export default function ExportInterceptor() {
       if (!paper) return;
       const mod: any = await import('html2pdf.js');
       const html2pdf = mod.default || mod;
-      const safeName = (document.querySelector('.resume-head h1')?.textContent || 'cv')
-        .replace(/[^a-z0-9]+/gi, '-')
-        .replace(/^-|-$/g, '')
-        .toLowerCase() || 'cv';
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: `${safeName}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['.resume-section', '.avatar'] },
-        })
-        .from(paper)
-        .save();
+      const worker = html2pdf().set({
+        margin: 0,
+        filename: `${safeFileName()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.resume-section', '.avatar'] },
+      }).from(paper);
+
+      await worker.toPdf().get('pdf').then((pdf: any) => {
+        const total = pdf.internal.getNumberOfPages();
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 116, 139);
+        for (let page = 1; page <= total; page += 1) {
+          pdf.setPage(page);
+          pdf.text(`Page ${page} of ${total}`, 105, 291, { align: 'center' });
+        }
+      });
+      await worker.save();
     };
 
     const exportDOCX = async () => {
@@ -59,11 +69,7 @@ export default function ExportInterceptor() {
         margins: { top: 0.55, right: 0.55, bottom: 0.55, left: 0.55 },
         metadata: { title: document.querySelector('.resume-head h1')?.textContent || 'CV', creator: 'AI CV Builder' },
       });
-      const safeName = (document.querySelector('.resume-head h1')?.textContent || 'cv')
-        .replace(/[^a-z0-9]+/gi, '-')
-        .replace(/^-|-$/g, '')
-        .toLowerCase() || 'cv';
-      downloadBlob(blob, `${safeName}.docx`);
+      downloadBlob(blob, `${safeFileName()}.docx`);
     };
 
     const onClick = (event: MouseEvent) => {

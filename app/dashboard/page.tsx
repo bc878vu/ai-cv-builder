@@ -1,20 +1,176 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { FileText, Plus, Trash2, ArrowRight, Sparkles, Search, MoreHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, Check, Clock3, Copy, FileText, LayoutTemplate, Plus, Search, Sparkles, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import './dashboard.css';
 
-type SavedCV = { id: string; name: string; role: string; updatedAt: string };
+type CVRecord = {
+  id: string;
+  name: string;
+  role: string;
+  updatedAt: string;
+  template?: string;
+  accent?: string;
+  photo?: string;
+  summary?: string;
+};
+
+type StoredCV = {
+  cv?: { name?: string; role?: string; photo?: string; summary?: string };
+  template?: string;
+  design?: { accent?: string };
+};
+
 const KEY = 'ai-cv-builder-cvs';
+const STORAGE_PREFIX = 'ai-cv-builder-';
+
+const templateLabels: Record<string, string> = {
+  professional: 'Professional', modern: 'Modern', minimal: 'Minimal', creative: 'Creative',
+  executive: 'Executive', developer: 'Developer', graduate: 'Fresh Graduate', ats: 'ATS Friendly',
+  consulting: 'Consulting', academic: 'Academic', elegant: 'Elegant', bold: 'Bold',
+};
+
+function readIndex(): CVRecord[] {
+  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'CV';
+}
+
+function formatDate(value: string) {
+  try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value)); }
+  catch { return 'Recently'; }
+}
 
 export default function Dashboard() {
   const router = useRouter();
-  const [cvs, setCvs] = useState<SavedCV[]>([]);
+  const [cvs, setCvs] = useState<CVRecord[]>([]);
   const [query, setQuery] = useState('');
-  useEffect(() => { try { setCvs(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch {} }, []);
-  function createCV() { const id = `cv-${Date.now()}`; const next = [{ id, name: 'Untitled CV', role: 'Professional Title', updatedAt: new Date().toISOString() }, ...cvs]; localStorage.setItem(KEY, JSON.stringify(next)); setCvs(next); router.push(`/?cv=${id}`); }
-  function remove(id: string) { const next = cvs.filter(c => c.id !== id); localStorage.setItem(KEY, JSON.stringify(next)); localStorage.removeItem(`ai-cv-builder-${id}`); setCvs(next); }
-  const filtered = cvs.filter(cv => `${cv.name} ${cv.role}`.toLowerCase().includes(query.toLowerCase()));
-  return <main className="dashboard"><header className="dashboard-head"><div className="dash-brand"><div className="logo">CV</div><div><strong>AI CV Builder</strong><span>Workspace</span></div></div><div className="dash-head-actions"><button className="secondary" onClick={() => router.push('/')}><FileText size={15}/> Editor</button><button className="primary dash-new" onClick={createCV}><Plus size={16}/> Create new CV</button></div></header><section className="dash-content"><div className="dash-intro"><div><div className="eyebrow"><Sparkles size={14}/> WORKSPACE</div><h1>My CVs</h1><p>Create multiple tailored CVs for different jobs, roles and industries.</p></div><span className="count">{cvs.length} CV{cvs.length === 1 ? '' : 's'}</span></div>{cvs.length > 0 && <div className="dash-toolbar"><div className="search-box"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search your CVs…"/></div><span className="hint">Changes are saved automatically</span></div>}{cvs.length === 0 ? <div className="empty"><div className="empty-icon"><FileText size={34}/></div><h2>No CVs yet</h2><p>Create your first CV and start customizing it with templates and AI.</p><button className="primary" onClick={createCV}><Plus size={16}/> Create my first CV</button></div> : filtered.length === 0 ? <div className="empty compact"><Search size={30}/><h2>No matching CVs</h2><p>Try a different name or professional title.</p></div> : <div className="cv-grid">{filtered.map(cv => <article className="cv-card" key={cv.id}><div className="cv-thumb"><div></div><i></i><i></i><i></i></div><div className="cv-info"><strong>{cv.name || 'Untitled CV'}</strong><span>{cv.role || 'Professional Title'}</span><small>Updated {new Date(cv.updatedAt).toLocaleDateString()}</small></div><div className="cv-actions"><button onClick={() => router.push(`/?cv=${cv.id}`)} className="open">Open <ArrowRight size={15}/></button><button onClick={() => remove(cv.id)} className="delete" aria-label={`Delete ${cv.name || 'CV'}`}><Trash2 size={15}/></button><button className="more" aria-label="More options"><MoreHorizontal size={16}/></button></div></article>)}</div>}</section></main>;
+  const [loaded, setLoaded] = useState(false);
+
+  function refresh() {
+    const index = readIndex().map((entry) => {
+      try {
+        const stored: StoredCV = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${entry.id}`) || '{}');
+        return {
+          ...entry,
+          name: stored.cv?.name || entry.name || 'Untitled CV',
+          role: stored.cv?.role || entry.role || 'Professional Title',
+          photo: stored.cv?.photo || '',
+          summary: stored.cv?.summary || '',
+          template: stored.template || entry.template || 'professional',
+          accent: stored.design?.accent || entry.accent || '#2563eb',
+        };
+      } catch { return entry; }
+    });
+    setCvs(index);
+    setLoaded(true);
+  }
+
+  useEffect(() => {
+    refresh();
+    const onStorage = () => refresh();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onStorage);
+    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('focus', onStorage); };
+  }, []);
+
+  function createCV() {
+    const id = `cv-${Date.now()}`;
+    const now = new Date().toISOString();
+    const fresh: CVRecord = { id, name: 'Untitled CV', role: 'Professional Title', updatedAt: now, template: 'professional', accent: '#2563eb' };
+    const next = [fresh, ...cvs];
+    localStorage.setItem(KEY, JSON.stringify(next));
+    localStorage.setItem(`${STORAGE_PREFIX}${id}`, JSON.stringify({ cv: { id, name: '', role: '', email: '', phone: '', location: '', linkedin: '', website: '', summary: '', experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], photo: '', photoPosition: 'right', photoShape: 'circle', photoSize: 88 }, design: { accent: '#2563eb', font: 'Inter', size: 10.5, spacing: 1, columns: 1, radius: 6, showAvatar: true }, template: 'professional', sectionOrder: ['profile','experience','projects','skills','education','certifications','languages','interests'], aiSettings: { tone: 'Professional', length: 'Concise', audience: 'Recruiters / ATS', language: 'English', focus: 'Achievements & impact' } }));
+    router.push(`/?cv=${id}`);
+  }
+
+  function remove(id: string) {
+    if (!window.confirm('Delete this CV? This action cannot be undone.')) return;
+    const next = cvs.filter(c => c.id !== id);
+    localStorage.setItem(KEY, JSON.stringify(next));
+    localStorage.removeItem(`${STORAGE_PREFIX}${id}`);
+    setCvs(next);
+  }
+
+  function duplicate(cv: CVRecord) {
+    const source = localStorage.getItem(`${STORAGE_PREFIX}${cv.id}`);
+    if (!source) return;
+    const id = `cv-${Date.now()}`;
+    try {
+      const data = JSON.parse(source);
+      data.cv = { ...data.cv, id, name: `${data.cv?.name || 'Untitled CV'} Copy` };
+      localStorage.setItem(`${STORAGE_PREFIX}${id}`, JSON.stringify(data));
+      const entry = { ...cv, id, name: data.cv.name, updatedAt: new Date().toISOString() };
+      const next = [entry, ...cvs];
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setCvs(next);
+    } catch { /* ignore malformed local record */ }
+  }
+
+  const filtered = useMemo(() => cvs.filter(cv => `${cv.name} ${cv.role} ${templateLabels[cv.template || 'professional']}`.toLowerCase().includes(query.toLowerCase())), [cvs, query]);
+  const completed = cvs.filter(cv => Boolean(cv.name && cv.name !== 'Untitled CV' && cv.role && cv.role !== 'Professional Title')).length;
+
+  return (
+    <main className="dashboard">
+      <section className="dashboard-hero">
+        <div className="dash-hero-inner">
+          <div className="dash-copy">
+            <div className="eyebrow"><Sparkles size={14}/> YOUR WORKSPACE</div>
+            <h1>Build a CV that gets noticed.</h1>
+            <p>Create, customize and tailor multiple professional CVs with live previews and AI assistance — all from one clean workspace.</p>
+            <div className="dash-hero-actions">
+              <button className="primary" onClick={createCV}><Plus size={17}/> Create new CV</button>
+              <button className="secondary" onClick={() => router.push('/')}><FileText size={16}/> Open editor</button>
+            </div>
+          </div>
+          <div className="dash-orbit" aria-hidden="true"><div className="orbit-card"><span>AI</span><strong>CV</strong><small>Ready to build</small></div><i></i><b></b></div>
+        </div>
+      </section>
+
+      <section className="dash-content">
+        <div className="stats-row">
+          <div className="stat-card"><span>Total CVs</span><strong>{cvs.length}</strong><small>Saved in this browser</small></div>
+          <div className="stat-card"><span>Ready CVs</span><strong>{completed}</strong><small>With name and title</small></div>
+          <div className="stat-card"><span>Templates</span><strong>12</strong><small>Professional starting points</small></div>
+          <div className="stat-card"><span>AI tools</span><strong>6</strong><small>Writing, tailoring & ATS</small></div>
+        </div>
+
+        <div className="section-heading">
+          <div><div className="eyebrow"><LayoutTemplate size={14}/> CV LIBRARY</div><h2>My CVs</h2><p>Keep a separate version for every role, company or career direction.</p></div>
+          <span className="count">{cvs.length} {cvs.length === 1 ? 'CV' : 'CVs'}</span>
+        </div>
+
+        <div className="dash-toolbar">
+          <label className="search-box"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name, role or template…" aria-label="Search CVs"/></label>
+          <div className="toolbar-note"><Check size={14}/> Auto-saved locally</div>
+        </div>
+
+        {!loaded ? <div className="empty"><div className="empty-icon"><Clock3 size={28}/></div><h2>Loading your workspace…</h2><p>Preparing your saved CVs.</p></div> : cvs.length === 0 ? (
+          <div className="empty"><div className="empty-icon"><FileText size={30}/></div><h2>Your CV library is empty</h2><p>Create your first CV and start with a professional template. Your work will be saved automatically in this browser.</p><button className="primary" onClick={createCV}><Plus size={16}/> Create my first CV</button></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty compact"><Search size={28}/><h2>No matching CVs</h2><p>Try another name, job title or template.</p></div>
+        ) : (
+          <div className="cv-grid">{filtered.map(cv => (
+            <article className="cv-card" key={cv.id}>
+              <button className="cv-preview" onClick={() => router.push(`/?cv=${cv.id}`)} aria-label={`Open ${cv.name || 'CV'}`} style={{ '--accent': cv.accent || '#2563eb' } as React.CSSProperties}>
+                <div className="preview-paper">
+                  <div className="preview-top" style={{ background: cv.accent || '#2563eb' }}></div>
+                  <div className="preview-identity">{cv.photo ? <img src={cv.photo} alt=""/> : <span>{initials(cv.name)}</span>}<div><strong>{cv.name || 'Your Name'}</strong><small>{cv.role || 'Professional Title'}</small></div></div>
+                  <div className="preview-rule"></div><i></i><i></i><i></i><div className="preview-cols"><span></span><span></span></div>
+                  <em>{templateLabels[cv.template || 'professional'] || 'Professional'}</em>
+                </div>
+              </button>
+              <div className="cv-info"><div><strong>{cv.name || 'Untitled CV'}</strong><span>{cv.role || 'Professional Title'}</span></div><small>Updated {formatDate(cv.updatedAt)}</small></div>
+              <div className="cv-footer"><span className="template-tag">{templateLabels[cv.template || 'professional'] || 'Professional'}</span><div className="cv-actions"><button className="open" onClick={() => router.push(`/?cv=${cv.id}`)}>Open <ArrowRight size={14}/></button><button className="icon-btn" onClick={() => duplicate(cv)} aria-label="Duplicate CV" title="Duplicate"><Copy size={14}/></button><button className="icon-btn danger" onClick={() => remove(cv.id)} aria-label="Delete CV" title="Delete"><Trash2 size={14}/></button></div></div>
+            </article>
+          ))}</div>
+        )}
+
+        <section className="dashboard-tips"><div><Sparkles size={19}/><strong>AI-powered workflow</strong><p>Use the AI Assistant to improve wording, tailor your CV to a job description and run an ATS-focused review without inventing experience.</p></div><div><LayoutTemplate size={19}/><strong>12 ready-to-use templates</strong><p>Switch layouts at any time. Your CV content stays separate from the template and design settings.</p></div><div><FileText size={19}/><strong>Export when ready</strong><p>Use the editor's PDF or DOCX actions after checking the live A4 preview.</p></div></section>
+      </section>
+    </main>
+  );
 }

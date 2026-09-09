@@ -1,3 +1,5 @@
+import './loading.css';
+
 export default function Loading() {
   return (
     <main className="global-loading-fallback" aria-label="Loading AI CV Builder">

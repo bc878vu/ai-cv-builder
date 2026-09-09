@@ -4,6 +4,7 @@ import ExportInterceptor from './export-interceptor';
 import SiteChrome from './site-chrome';
 import './globals.css';
 import './public.css';
+import './print.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),

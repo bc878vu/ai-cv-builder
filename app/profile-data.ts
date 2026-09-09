@@ -1,15 +1,24 @@
 export const developer = {
   name: 'Asad Amanat Ali',
   username: 'bc878vu',
-  title: 'BS Software Engineering Student · Web Developer · Learning GitHub & Cloud',
+  title: 'Web Developer · AI Solutions · Software & Web Applications',
   location: 'Gujrat, Pakistan',
   email: 'a.m.a63425@gmail.com',
   whatsapp: '03098851445',
   github: 'https://github.com/bc878vu',
   vercel: 'https://vercel.com/asad2327s-projects',
   avatar: 'https://avatars.githubusercontent.com/u/270855559?v=4',
-  bio: 'Asad Amanat Ali is a software engineering student and web developer who builds practical, responsive applications and experiments with AI, cloud deployment, automation and modern JavaScript tooling. AI CV Builder is designed as a real-world product project: a fast, privacy-conscious CV workspace that helps people create, edit, tailor and export professional resumes.',
+  bio: 'Asad Amanat Ali builds modern, responsive websites, software applications and AI-powered products. He focuses on practical solutions, clean interfaces, reliable workflows and products that are easy for people to use.',
 };
+
+export const services = [
+  { title: 'Website Development', description: 'Business websites, landing pages, portfolios, dashboards and responsive web applications.' },
+  { title: 'Custom Software', description: 'Management systems, internal tools, automation workflows and software tailored to a specific business process.' },
+  { title: 'AI-Powered Applications', description: 'AI assistants, content workflows, document tools and intelligent features integrated into useful products.' },
+  { title: 'Existing Website / App Improvements', description: 'UI modernization, responsive fixes, performance improvements, feature additions and bug fixing.' },
+  { title: 'CV & Resume Solutions', description: 'Professional CV creation, formatting, ATS optimization and AI-assisted resume workflows.' },
+  { title: 'Deployment & Product Setup', description: 'Production deployment, GitHub workflows, environment configuration and launch support.' },
+];
 
 export const projects = [
   { name: 'ai-cv-builder', visibility: 'Public', description: 'AI-powered CV builder with templates, live A4 editing, AI writing, ATS analysis, profile photos and PDF/DOCX export.' },

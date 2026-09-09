@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
+import ExportInterceptor from './export-interceptor';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <ExportInterceptor />
         <Suspense fallback={<div style={{ padding: 24, fontFamily: 'Arial, sans-serif' }}>Loading CV Builder…</div>}>
           {children}
         </Suspense>

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   applicationName: 'AI CV Builder',
   authors: [{ name: 'AI CV Builder' }],
   creator: 'AI CV Builder',
+  manifest: '/manifest.webmanifest',
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
   openGraph: { type: 'website', url: '/', title: 'AI CV Builder — Build a Professional CV with AI', description: 'Create ATS-friendly CVs with professional templates, AI writing, photo controls and PDF/DOCX export.', siteName: 'AI CV Builder' },
   twitter: { card: 'summary_large_image', title: 'AI CV Builder', description: 'Build professional ATS-friendly CVs with AI.' },
@@ -18,5 +19,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#111827' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><Suspense fallback={<div style={{ padding: 24, fontFamily: 'Arial, sans-serif' }}>Loading CV Builder…</div>}>{children}</Suspense></body></html>;
+  return <html lang="en"><body><Suspense fallback={<div style={{ padding: 24, fontFamily: 'Arial, sans-serif' }}>Loading CV Builder…</div></Suspense></body></html>;
 }

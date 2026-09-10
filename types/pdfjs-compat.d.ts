@@ -1,5 +1,4 @@
-import type { DocumentInitParameters, PDFDocumentLoadingTask } from 'pdfjs-dist/types/src/display/api';
-
 declare module 'pdfjs-dist/legacy/build/pdf.mjs' {
-  export function getDocument(src?: DocumentInitParameters & { disableWorker?: boolean }): PDFDocumentLoadingTask;
+  type LegacyDocumentInitParameters = { data?: unknown; disableWorker?: boolean; [key:string]: unknown };
+  export function getDocument(src?: LegacyDocumentInitParameters): any;
 }

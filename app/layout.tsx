@@ -6,6 +6,7 @@ import './globals.css';
 import './public.css';
 import './version.css';
 import './editor-polish.css';
+import './cv-studio.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),

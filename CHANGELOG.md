@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.3 — September 11, 2026
+
+### Floating CV controls
+- Replaced the wide fixed toolbar with a compact circular control button.
+- The round control can be dragged freely around the viewport and remembers its position.
+- Click/tap the circle to open or close a modern popup panel.
+- Popup controls are responsive and stay clamped inside the viewport after resize.
+- Added dedicated zoom, contact alignment, header alignment, drag-mode and reset controls.
+- Added touch-friendly pointer dragging and clear visual feedback while moving the control.
+- Kept the existing CV section and header drag-and-drop behavior intact.
+- Increased layering and spacing so the floating controls are less likely to cover editor content or the public navigation.
+
+### Release metadata
+- Internal application release is 0.8.3.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.2 — September 11, 2026
 
 ### Responsive editor repair
@@ -28,33 +44,3 @@
 - Removed the generated "AI CV BUILDER • PROFESSIONAL RESUME" footer/banner from the CV page.
 - Locked print output to a true A4 portrait page width.
 - Removed the unbreakable-column print rule that could push content onto an unnecessary blank sheet.
-- Kept individual CV sections together where possible while allowing long columns to flow naturally across additional A4 pages.
-- Hid editor-only controls and screen chrome during printing.
-
-## 0.8.0 — September 11, 2026
-
-### Premium CV Studio
-- Added a modern visual design layer for the live A4 workspace.
-- Added a styled page background, glass panels, polished navigation, cards and preview staging.
-- Upgraded CV headers with stronger typography, accent treatments and profile-photo presentation.
-- Added a refined CV footer treatment.
-- Improved template previews and visual differentiation across the 12 templates.
-- Added responsive styling for desktop, tablet and mobile editing.
-
-### Interactive editing
-- Added live CV zoom controls from 70% to 140%.
-- Added drag-and-drop CV section positioning, including moving sections between the main and side columns.
-- Saved custom section placement per CV in the browser.
-- Added contact-information alignment controls (left, center, right).
-- Added a one-click layout reset.
-
-### Print and A4 pagination
-- Removed generated print header content so the CV itself controls its header.
-- Added a dedicated A4 print stylesheet.
-- Fixed the extra blank print sheet caused by the fixed screen-preview page height.
-- Allow content to flow onto additional A4 pages only when the CV actually needs them.
-- Kept sections together where possible during pagination.
-
-## 0.7.0 — September 11, 2026
-
-Previous 0.7.0 public/security/offline release notes retained in repository history.

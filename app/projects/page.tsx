@@ -1,33 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowUpRight, FolderGit2, LockKeyhole, Github } from 'lucide-react';
+import { ArrowUpRight, FolderGit2, LockKeyhole, Github, Code2 } from 'lucide-react';
 import { projects, repoUrl } from '../profile-data';
 
 export const metadata: Metadata = {
-  title: 'Projects',
-  description: 'Explore Asad Amanat Ali\'s GitHub projects and software work.',
+  title: 'Projects & Portfolio',
+  description: 'Browse the software, web and product projects connected to Asad Amanat Ali\'s portfolio.',
 };
 
-export default function ProjectsPage() {
-  return (
-    <main className="public-page">
-      <section className="public-hero compact">
-        <span className="eyebrow"><FolderGit2 size={14}/> PROJECT DIRECTORY</span>
-        <h1>Projects, experiments and products.</h1>
-        <p>A complete directory of the repositories connected to this profile. Public repositories can be opened directly on GitHub; private projects are shown for portfolio context and remain access-controlled.</p>
-      </section>
-      <section className="project-grid">
-        {projects.map((project) => {
-          const isPrivate = project.visibility === 'Private';
-          return <article className="project-card" key={project.name}>
-            <div className="project-top"><span className="project-icon">{isPrivate ? <LockKeyhole size={18}/> : <Github size={18}/>}</span><span className={isPrivate ? 'private-badge' : 'public-badge'}>{project.visibility}</span></div>
-            <h2>{project.name}</h2>
-            <p>{project.description}</p>
-            {isPrivate ? <span className="project-private-note">Private repository · GitHub access required</span> : <Link href={repoUrl(project.name)} target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={15}/></Link>}
-          </article>;
-        })}
-      </section>
-      <section className="cta-card"><div><span className="eyebrow">BUILD WITH ME</span><h2>Have an idea or need a web application?</h2><p>Reach out for collaboration, product ideas, front-end work and practical software projects.</p></div><Link className="public-primary" href="/contact">Contact Asad <ArrowUpRight size={16}/></Link></section>
-    </main>
-  );
-}
+export default function ProjectsPage(){return <main className="public-page">
+  <section className="public-hero compact"><span className="eyebrow"><FolderGit2 size={14}/> PROJECT DIRECTORY</span><h1>Projects, experiments and products I have worked on.</h1><p>This page keeps the portfolio in one place. Some repositories are polished products, some are experiments or learning projects, and each one represents a different part of the development journey. Public repositories open on GitHub; private work stays private.</p><div className="hero-actions"><Link className="public-primary" href="/services">Discuss a project <ArrowUpRight size={16}/></Link><Link className="public-secondary" href="/profile">View profile</Link></div></section>
+  <section className="project-grid">{projects.map(project=>{const isPrivate=project.visibility==='Private';return <article className="project-card" key={project.name}><div className="project-top"><span className="project-icon">{isPrivate?<LockKeyhole size={18}/>:<Github size={18}/>}</span><span className={isPrivate?'private-badge':'public-badge'}>{project.visibility}</span></div><h2>{project.name}</h2><p>{project.description}</p>{isPrivate?<span className="project-private-note">Private repository · access is intentionally restricted</span>:<Link href={repoUrl(project.name)} target="_blank" rel="noreferrer">Open repository <ArrowUpRight size={15}/></Link>}</article>})}</section>
+  <section className="public-section-heading"><span className="eyebrow">WHAT THIS PORTFOLIO SHOWS</span><h2>A mix of product work and hands-on learning.</h2></section>
+  <section className="public-grid three"><article className="public-card"><Code2 size={20}/><h2>Real interfaces</h2><p>Responsive layouts, dashboards, forms and editor-style workflows are recurring themes across the projects.</p></article><article className="public-card"><Code2 size={20}/><h2>Problem-focused software</h2><p>Several projects are built around practical records, operations, education, quotations or automation rather than generic demos.</p></article><article className="public-card"><Code2 size={20}/><h2>Ongoing improvement</h2><p>The portfolio is intentionally active. Older projects remain useful references while newer work gets cleaner structure and stronger product thinking.</p></article></section>
+  <section className="cta-card"><div><span className="eyebrow">BUILD SOMETHING USEFUL</span><h2>Have an idea that is not in this list?</h2><p>That is fine. Tell me what you are trying to build, what is not working today and what you want the finished product to help people do.</p></div><Link className="public-primary" href="/contact">Contact Asad <ArrowUpRight size={16}/></Link></section>
+</main>}

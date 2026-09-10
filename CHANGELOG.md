@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.7 — September 11, 2026
+
+### Floating controls popup
+- Made the CV controls popup independently draggable from its header.
+- Added 8-direction edge and corner resize handles for free shrink/extend behavior.
+- Popup position and dimensions are persisted locally and restored on the next visit.
+- Added viewport-aware minimum/maximum sizing and clamping for desktop, tablet and phone screens.
+- Added a popup reset control to restore a sensible position and size near the floating button.
+- Added live popup size readout while resizing.
+- Added pointer capture and touch-safe interaction for smooth drag/resize without losing the pointer.
+- Removed the old popup auto-placement dependency after opening; users now have full manual control.
+- Bumped the service-worker shell cache to v7.
+
+### Release metadata
+- Internal application release is 0.8.7.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.6 — September 11, 2026
 
 ### Mobile editor and A4 zoom

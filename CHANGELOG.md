@@ -4,15 +4,28 @@
 
 ### Premium CV Studio
 - Added a modern visual design layer for the live A4 workspace.
-- Added styled page background, glass panels, polished navigation, cards and preview staging.
+- Added a styled page background, glass panels, polished navigation, cards and preview staging.
 - Upgraded CV headers with stronger typography, accent treatments and profile-photo presentation.
-- Added a refined CV footer treatment and print-friendly layout styling.
-- Improved all template previews and added stronger visual differentiation across the 12 templates.
+- Added a refined CV footer treatment.
+- Improved template previews and visual differentiation across the 12 templates.
 - Added responsive styling for desktop, tablet and mobile editing.
-- Kept the existing editor, AI assistant, imports, exports, photo controls and local save workflow intact.
+
+### Interactive editing
+- Added live CV zoom controls from 70% to 140%.
+- Added drag-and-drop CV section positioning, including moving sections between the main and side columns.
+- Saved custom section placement per CV in the browser.
+- Added contact-information alignment controls (left, center, right).
+- Added a one-click layout reset.
+
+### Print and A4 pagination
+- Removed generated print header content so the CV itself controls its header.
+- Added a dedicated A4 print stylesheet.
+- Fixed the extra blank print sheet caused by the fixed screen-preview page height.
+- Allow content to flow onto additional A4 pages only when the CV actually needs them.
+- Kept sections together where possible during pagination.
 
 ### Release metadata
-- Internal application release bumped to 0.8.0.
+- Internal application release is 0.8.0.
 - The release number remains internal and is not shown inside the app UI.
 
 ## 0.7.0 — September 11, 2026

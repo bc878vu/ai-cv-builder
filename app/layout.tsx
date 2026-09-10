@@ -5,6 +5,7 @@ import SiteChrome from './site-chrome';
 import './globals.css';
 import './public.css';
 import './version.css';
+import './editor-polish.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),

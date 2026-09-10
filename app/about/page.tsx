@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, FileText, Sparkles, WandSparkles, ShieldCheck, Download, LayoutTemplate } from 'lucide-react';
 import { developer } from '../profile-data';
-import { APP_VERSION, RELEASE_NAME } from '../app-version';
 
 export const metadata: Metadata = {
   title: 'About AI CV Builder',
@@ -44,6 +43,6 @@ export default function AboutPage() {
       <div><span className="eyebrow">CREATOR</span><h2>{developer.name}</h2><p className="creator-title">{developer.title}</p><p>{developer.bio}</p><div className="hero-actions"><Link className="public-secondary" href="/profile">View profile</Link><Link className="public-secondary" href="/contact">Contact</Link></div></div>
     </section>
 
-    <section className="cta-card"><div><span className="eyebrow">CURRENT RELEASE</span><h2>Version {APP_VERSION} · {RELEASE_NAME}</h2><p>The project is being developed as a real product: clearer writing, stronger responsive behaviour, safer public APIs and a smoother editing workflow.</p></div><Link className="public-primary" href="/feedback">Share feedback <ArrowRight size={16}/></Link></section>
+    <section className="cta-card"><div><span className="eyebrow">KEEP BUILDING</span><h2>A cleaner workspace, with your CV at the centre.</h2><p>The project is developed as a real product: clearer writing, stronger responsive behaviour, safer public APIs and a smoother editing workflow.</p></div><Link className="public-primary" href="/feedback">Share feedback <ArrowRight size={16}/></Link></section>
   </main>;
 }

@@ -1,11 +1,26 @@
 # Changelog
 
+## 0.8.0 — September 11, 2026
+
+### Premium CV Studio
+- Added a modern visual design layer for the live A4 workspace.
+- Added styled page background, glass panels, polished navigation, cards and preview staging.
+- Upgraded CV headers with stronger typography, accent treatments and profile-photo presentation.
+- Added a refined CV footer treatment and print-friendly layout styling.
+- Improved all template previews and added stronger visual differentiation across the 12 templates.
+- Added responsive styling for desktop, tablet and mobile editing.
+- Kept the existing editor, AI assistant, imports, exports, photo controls and local save workflow intact.
+
+### Release metadata
+- Internal application release bumped to 0.8.0.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.7.0 — September 11, 2026
 
 ### Product polish
 - Reworked the public pages with more natural, product-focused copy.
 - Expanded About, Services, Projects, Profile, Contact, Privacy and Terms content.
-- Added a visible semantic app version in the public navigation.
+- Removed the visible semantic app version from public navigation and About content.
 - Improved dashboard wording and TypeScript typing.
 
 ### Security

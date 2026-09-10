@@ -7,7 +7,7 @@ export const developer = {
   whatsapp: '03098851445',
   github: 'https://github.com/bc878vu',
   vercel: 'https://vercel.com/asad2327s-projects',
-  avatar: 'https://avatars.githubusercontent.com/u/270855559?v=4',
+  avatar: 'https://github.com/bc878vu.png?size=512',
   bio: 'Asad Amanat Ali builds modern, responsive websites, software applications and AI-powered products. He focuses on practical solutions, clean interfaces, reliable workflows and products that are easy for people to use.',
 };
 

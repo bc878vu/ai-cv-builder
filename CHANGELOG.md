@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.5 — September 11, 2026
+
+### Free-position floating controls
+- Fixed the circular CV control stopping after the first drag movement.
+- Replaced the drag listener lifecycle with stable pointer events and pointer capture.
+- Added pointer cancel/release handling so mouse, touch and pen dragging remains reliable.
+- Floating position is now stored under a fresh key so old broken positions cannot interfere.
+- Added visual-viewport-aware clamping for browser resize, mobile keyboards and pinch-zoom scenarios.
+- Popup automatically opens on the safe side of the control instead of going off-screen.
+- Popup automatically flips below the button when the button is near the top edge.
+- Added a one-tap Dock control to snap the button to the nearest viewport edge without removing free positioning.
+- Added lightweight requestAnimationFrame throttling during drag for smoother movement.
+- Added a new service-worker cache version to prevent stale editor chunks from surviving the fix.
+
+### Release metadata
+- Internal application release is 0.8.5.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.4 — September 11, 2026
 
 ### Critical editor stability fix
@@ -15,10 +33,6 @@
 - Preserved the draggable circular CV controls and responsive popup introduced in 0.8.3.
 - Preserved zoom, contact alignment, header alignment, drag mode and reset controls.
 
-### Release metadata
-- Internal application release is 0.8.4.
-- The release number remains internal and is not shown inside the app UI.
-
 ## 0.8.3 — September 11, 2026
 
 ### Floating CV controls
@@ -30,10 +44,6 @@
 - Added touch-friendly pointer dragging and clear visual feedback while moving the control.
 - Increased layering and spacing so the floating controls are less likely to cover editor content or the public navigation.
 
-### Release metadata
-- Internal application release is 0.8.3.
-- The release number remains internal and is not shown inside the app UI.
-
 ## 0.8.2 — September 11, 2026
 
 ### Responsive editor repair
@@ -43,10 +53,6 @@
 - Changed editor zoom from visual transform scaling to layout-aware CSS zoom so the page and surrounding workspace stay synchronized.
 - Added extra preview breathing room so floating controls no longer cover the end of CV content.
 - Repositioned editor controls above the public navigation dock on smaller screens.
-
-### Release metadata
-- Internal application release is 0.8.2.
-- The release number remains internal and is not shown inside the app UI.
 
 ## 0.8.1 — September 11, 2026
 

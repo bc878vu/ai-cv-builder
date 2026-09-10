@@ -4,12 +4,13 @@ import ExportInterceptor from './export-interceptor';
 import SiteChrome from './site-chrome';
 import './globals.css';
 import './public.css';
+import './version.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),
   title: { default: 'AI CV Builder — Professional ATS-Friendly Resume Builder', template: '%s | AI CV Builder' },
-  description: 'Create professional, ATS-friendly CVs and resumes with AI writing, live A4 preview, professional templates, profile photos, PDF and Word export, and local CV import.',
-  keywords: ['AI CV Builder', 'AI resume builder', 'CV maker', 'resume builder', 'ATS resume', 'professional CV', 'resume templates', 'CV PDF', 'CV DOCX', 'free CV builder', 'resume maker'],
+  description: 'Create a professional CV with a live A4 editor, flexible templates, grounded AI writing, ATS analysis, local import and PDF or Word export.',
+  keywords: ['AI CV Builder', 'resume builder', 'CV maker', 'ATS resume', 'professional CV', 'resume templates', 'CV PDF', 'CV DOCX'],
   applicationName: 'AI CV Builder',
   authors: [{ name: 'Asad Amanat Ali' }],
   creator: 'Asad Amanat Ali',
@@ -17,8 +18,8 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg', shortcut: '/icon.svg', apple: '/icon.svg' },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
-  openGraph: { type: 'website', url: '/', title: 'AI CV Builder — Build a Professional CV with AI', description: 'Create ATS-friendly CVs with professional templates, AI writing, photo controls and PDF/DOCX export.', siteName: 'AI CV Builder', images: [{ url: '/icon.svg', width: 128, height: 128, alt: 'AI CV Builder' }] },
-  twitter: { card: 'summary', title: 'AI CV Builder', description: 'Build professional ATS-friendly CVs with AI.', images: ['/icon.svg'] },
+  openGraph: { type: 'website', url: '/', title: 'AI CV Builder — Build a Professional CV', description: 'Create, edit, tailor and export a professional CV with a live A4 workspace and practical AI assistance.', siteName: 'AI CV Builder', images: [{ url: '/icon.svg', width: 128, height: 128, alt: 'AI CV Builder' }] },
+  twitter: { card: 'summary', title: 'AI CV Builder', description: 'Build a professional CV with templates, AI writing and live A4 editing.', images: ['/icon.svg'] },
 };
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#111827' };

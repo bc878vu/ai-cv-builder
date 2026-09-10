@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.1 — September 11, 2026
+
+### Dynamic CV editing
+- Improved live CV zoom with a 60%–160% range.
+- Added persistent drag-and-drop section positioning across the main and side columns.
+- Added draggable header identity/photo positioning inside the CV header.
+- Added direct contact alignment and header alignment controls.
+- Fixed contact/header alignment refresh so saved choices are not overwritten by preview updates.
+- Improved the floating editing toolbar for smaller screens.
+
+### A4 print and pagination
+- Removed the generated "AI CV BUILDER • PROFESSIONAL RESUME" footer/banner from the CV page.
+- Locked print output to a true A4 portrait page width.
+- Removed the unbreakable-column print rule that could push content onto an unnecessary blank sheet.
+- Kept individual CV sections together where possible while allowing long columns to flow naturally across additional A4 pages.
+- Hid editor-only controls and screen chrome during printing.
+
+### Release metadata
+- Internal application release is 0.8.1.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.0 — September 11, 2026
 
 ### Premium CV Studio

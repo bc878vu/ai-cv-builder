@@ -5,6 +5,7 @@ import SiteChrome from './site-chrome';
 import CVInteractions from './cv-interactions';
 import './globals.css';
 import './public.css';
+import './public-nav-fix.css';
 import './version.css';
 import './editor-polish.css';
 import './cv-studio.css';

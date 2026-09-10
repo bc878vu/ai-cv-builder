@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.2 — September 11, 2026
+
+### Responsive editor repair
+- Fixed stale saved drag layouts from hiding CV content when switching between one-column and two-column templates.
+- Automatically stacks CV sections on narrow screens so content remains visible and usable.
+- Re-applies layout safely when the preview changes or the viewport is resized.
+- Changed editor zoom from visual transform scaling to layout-aware CSS zoom so the page and surrounding workspace stay synchronized.
+- Added extra preview breathing room so floating controls no longer cover the end of CV content.
+- Repositioned editor controls above the public navigation dock on smaller screens.
+
+### Release metadata
+- Internal application release is 0.8.2.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.1 — September 11, 2026
 
 ### Dynamic CV editing
@@ -16,10 +30,6 @@
 - Removed the unbreakable-column print rule that could push content onto an unnecessary blank sheet.
 - Kept individual CV sections together where possible while allowing long columns to flow naturally across additional A4 pages.
 - Hid editor-only controls and screen chrome during printing.
-
-### Release metadata
-- Internal application release is 0.8.1.
-- The release number remains internal and is not shown inside the app UI.
 
 ## 0.8.0 — September 11, 2026
 
@@ -45,33 +55,6 @@
 - Allow content to flow onto additional A4 pages only when the CV actually needs them.
 - Kept sections together where possible during pagination.
 
-### Release metadata
-- Internal application release is 0.8.0.
-- The release number remains internal and is not shown inside the app UI.
-
 ## 0.7.0 — September 11, 2026
 
-### Product polish
-- Reworked the public pages with more natural, product-focused copy.
-- Expanded About, Services, Projects, Profile, Contact, Privacy and Terms content.
-- Removed the visible semantic app version from public navigation and About content.
-- Improved dashboard wording and TypeScript typing.
-
-### Security
-- Added production security response headers and a Content Security Policy.
-- Added request-size and origin checks to public APIs.
-- Added lightweight per-client rate limiting for AI requests and public feedback submissions.
-- Kept AI credentials server-side and retained Supabase Row Level Security for public feedback.
-
-### Offline & reliability
-- Improved the service worker so public pages and static assets can be cached for offline use.
-- API requests are deliberately excluded from the offline cache.
-- Kept the existing local CV workflow, import/export tools and templates intact.
-
-### Content principles
-- Public copy was rewritten to sound straightforward and human rather than promotional or repetitive.
-- AI-assisted CV writing continues to be instructed to preserve facts and avoid fabricated claims.
-
-## 0.6.1
-
-Previous stable workspace release with the CV editor, templates, design controls, AI assistant, import/export workflow, public pages and feedback system.
+Previous 0.7.0 public/security/offline release notes retained in repository history.

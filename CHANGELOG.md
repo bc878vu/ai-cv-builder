@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.8 — September 11, 2026
+
+### Responsive navigation and profile image
+- Hardened public navbar links with active-route semantics, accessible mobile menu state and reliable menu closing after navigation.
+- Added responsive navigation sizing/overflow rules for phones, tablets and narrow desktop widths.
+- Added a stable GitHub avatar source with an in-app icon fallback so the profile image does not leave a broken image state.
+- Updated CSP to permit the stable GitHub avatar redirect source.
+- Added responsive viewport-safe styling for the floating popup and resize handles, including dynamic mobile viewport limits, containment and touch-safe hit areas.
+
+### Release metadata
+- Internal application release is 0.8.8.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.7 — September 11, 2026
 
 ### Floating controls popup

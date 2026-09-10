@@ -2,11 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import ExportInterceptor from './export-interceptor';
 import SiteChrome from './site-chrome';
+import CVInteractions from './cv-interactions';
 import './globals.css';
 import './public.css';
 import './version.css';
 import './editor-polish.css';
 import './cv-studio.css';
+import './cv-interactions.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),
@@ -27,5 +29,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#111827' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><ExportInterceptor /><SiteChrome /><Suspense fallback={<div className="global-loading-fallback"><div className="loading-logo">CV</div><strong>AI CV Builder</strong><span>Preparing your workspace…</span></div>}>{children}</Suspense></body></html>;
+  return <html lang="en"><body><ExportInterceptor /><SiteChrome /><CVInteractions /><Suspense fallback={<div className="global-loading-fallback"><div className="loading-logo">CV</div><strong>AI CV Builder</strong><span>Preparing your workspace…</span></div>}>{children}</Suspense></body></html>;
 }

@@ -2,11 +2,52 @@
   @page {
     size: A4 portrait;
     margin: 0;
+    @top-center { content: none; }
     @bottom-center {
       content: 'Page ' counter(page);
       font-family: Arial, sans-serif;
       font-size: 8pt;
       color: #64748b;
     }
+  }
+
+  html, body {
+    width: 210mm !important;
+    min-width: 210mm !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .app-shell,
+  .workspace,
+  .preview-area,
+  .paper-wrap {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .paper {
+    width: 210mm !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    break-after: auto;
+  }
+
+  .resume-section,
+  .resume-head,
+  .resume-columns,
+  .resume-main,
+  .resume-side {
+    break-inside: avoid-page;
   }
 }

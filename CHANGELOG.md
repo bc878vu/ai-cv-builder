@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.4 — September 11, 2026
+
+### Critical editor stability fix
+- Removed direct re-parenting and insertBefore/appendChild mutations from the React-owned CV tree.
+- Fixed the Chrome `NotFoundError: Failed to execute 'insertBefore'` crash caused by React reconciliation fighting external DOM moves.
+- Layout persistence now uses safe CSS ordering instead of moving React-owned nodes behind React's back.
+- Header photo/identity ordering is also applied through CSS order.
+- Removed the preview MutationObserver that repeatedly re-parented CV content after every React update.
+- Narrow-screen and one-column layouts are no longer forced through a stale saved DOM layout.
+- Bumped the service-worker cache so older broken editor chunks are invalidated after deployment.
+
+### Floating controls
+- Preserved the draggable circular CV controls and responsive popup introduced in 0.8.3.
+- Preserved zoom, contact alignment, header alignment, drag mode and reset controls.
+
+### Release metadata
+- Internal application release is 0.8.4.
+- The release number remains internal and is not shown inside the app UI.
+
 ## 0.8.3 — September 11, 2026
 
 ### Floating CV controls
@@ -9,7 +28,6 @@
 - Popup controls are responsive and stay clamped inside the viewport after resize.
 - Added dedicated zoom, contact alignment, header alignment, drag-mode and reset controls.
 - Added touch-friendly pointer dragging and clear visual feedback while moving the control.
-- Kept the existing CV section and header drag-and-drop behavior intact.
 - Increased layering and spacing so the floating controls are less likely to cover editor content or the public navigation.
 
 ### Release metadata

@@ -1,4 +1,4 @@
-const CACHE='ai-cv-builder-shell-v7';
+const CACHE='ai-cv-builder-shell-v8';
 const APP_SHELL=['/','/about','/services','/projects','/profile','/contact','/feedback','/terms','/privacy','/manifest.webmanifest','/icon.svg','/pdf.worker.mjs'];
 
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL).catch(()=>undefined)).then(()=>self.skipWaiting()))});

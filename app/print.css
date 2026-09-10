@@ -3,6 +3,8 @@
     size: A4 portrait;
     margin: 0;
     @top-center { content: none; }
+    @top-left { content: none; }
+    @top-right { content: none; }
     @bottom-center {
       content: 'Page ' counter(page);
       font-family: Arial, sans-serif;
@@ -22,32 +24,100 @@
     background: #fff !important;
   }
 
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .topbar,
+  .sidebar,
+  .tabs,
+  .preview-toolbar,
+  .cv-floating-tools,
+  .bottom-dock {
+    display: none !important;
+  }
+
   .app-shell,
   .workspace,
   .preview-area,
   .paper-wrap {
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .paper {
+    display: block !important;
     width: 210mm !important;
-    max-width: none !important;
+    min-width: 210mm !important;
+    max-width: 210mm !important;
     min-height: 0 !important;
     height: auto !important;
     margin: 0 !important;
-    transform: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    break-after: auto;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
   }
 
-  .resume-section,
+  .paper {
+    box-sizing: border-box !important;
+    display: block !important;
+    position: relative !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    max-width: 210mm !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 14mm 14mm 16mm !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    break-before: auto !important;
+    break-after: auto !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .paper:after {
+    content: none !important;
+    display: none !important;
+  }
+
   .resume-head,
+  .resume-section,
+  .resume-item,
+  .bullet,
+  .education-item,
+  .experience-item,
+  .project-item {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* Never mark the whole multi-page columns as unbreakable. */
   .resume-columns,
   .resume-main,
   .resume-side {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .resume-columns {
+    display: grid !important;
+  }
+
+  .resume-main,
+  .resume-side {
+    align-self: start !important;
+  }
+
+  .resume-section {
+    break-before: auto;
+    break-after: auto;
+  }
+
+  img {
     break-inside: avoid-page;
   }
 }

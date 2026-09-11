@@ -2,47 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, FileText, Sparkles, WandSparkles, ShieldCheck, Download, LayoutTemplate } from 'lucide-react';
 import { developer } from '../profile-data';
-
-export const metadata: Metadata = {
-  title: 'About AI CV Builder',
-  description: 'Learn why AI CV Builder was built, how the editor works and what you can do with it.',
-};
-
-export default function AboutPage() {
-  return <main className="public-page">
-    <section className="public-hero">
-      <span className="eyebrow"><Sparkles size={14}/> ABOUT THE BUILDER</span>
-      <h1>A practical CV workspace, without the usual clutter.</h1>
-      <p>AI CV Builder was built around a simple idea: writing a good CV should not require fighting with a document editor. You should be able to focus on your experience, see the result immediately, and change the presentation when the job changes.</p>
-      <div className="hero-actions"><Link className="public-primary" href="/">Open the builder <ArrowRight size={16}/></Link><Link className="public-secondary" href="/services">Work with me</Link></div>
-    </section>
-
-    <section className="public-grid three">
-      {[
-        ['Write first, design second','Your content stays separate from templates, so changing the look does not mean rebuilding the CV.'],
-        ['AI that stays grounded','The writing assistant is told to work from the information you provide rather than filling gaps with made-up claims.'],
-        ['Export when it is ready','Review the live A4 page, then prepare a PDF or Word file you can check before sending.'],
-        ['Import an existing CV','Bring in a text PDF, DOCX, TXT, Markdown file or an AI CV Builder backup and continue editing.'],
-        ['Keep more than one CV','Create separate versions for different roles, industries or seniority levels without overwriting the original.'],
-        ['Designed for real screens','The workspace adapts to desktop, tablet and mobile layouts instead of treating a phone as an afterthought.'],
-      ].map(([title,text]) => <article className="public-card" key={title}><CheckCircle2 size={19}/><h2>{title}</h2><p>{text}</p></article>)}
-    </section>
-
-    <section className="public-section-heading"><span className="eyebrow">HOW IT FITS TOGETHER</span><h2>One workflow from rough notes to a finished CV.</h2></section>
-    <section className="feature-strip">
-      <div><FileText size={20}/><b>1. Add your information</b><span>Enter your profile, experience, education, skills, projects and other sections in the editor.</span></div>
-      <div><LayoutTemplate size={20}/><b>2. Shape the presentation</b><span>Choose a template, adjust typography, spacing, columns, colours and profile-photo placement.</span></div>
-      <div><WandSparkles size={20}/><b>3. Refine the wording</b><span>Use the assistant for summaries, experience bullets, skills, job tailoring, cover letters and ATS review.</span></div>
-      <div><Download size={20}/><b>4. Check and export</b><span>Inspect the A4 preview and verify the exported file before you send it anywhere.</span></div>
-      <div><ShieldCheck size={20}/><b>5. Keep control of your data</b><span>Normal editing is browser-based. AI features only send the text needed for the request to the configured provider.</span></div>
-      <div><Sparkles size={20}/><b>6. Keep improving</b><span>Save separate CV versions, update them for new roles and keep your strongest wording ready to reuse.</span></div>
-    </section>
-
-    <section className="creator-card">
-      <img src={developer.avatar} alt="Asad Amanat Ali" />
-      <div><span className="eyebrow">CREATOR</span><h2>{developer.name}</h2><p className="creator-title">{developer.title}</p><p>{developer.bio}</p><div className="hero-actions"><Link className="public-secondary" href="/profile">View profile</Link><Link className="public-secondary" href="/contact">Contact</Link></div></div>
-    </section>
-
-    <section className="cta-card"><div><span className="eyebrow">KEEP BUILDING</span><h2>A cleaner workspace, with your CV at the centre.</h2><p>The project is developed as a real product: clearer writing, stronger responsive behaviour, safer public APIs and a smoother editing workflow.</p></div><Link className="public-primary" href="/feedback">Share feedback <ArrowRight size={16}/></Link></section>
-  </main>;
-}
+import CmsHero from '../cms-hero';
+export const metadata: Metadata = { title: 'About AI CV Builder', description: 'Learn why AI CV Builder was built, how the editor works and what you can do with it.' };
+export default async function AboutPage(){return <main className="public-page"><section className="public-hero"><span className="eyebrow"><Sparkles size={14}/> ABOUT THE BUILDER</span><CmsHero page="/about" title="A practical CV workspace, without the usual clutter." description="AI CV Builder was built around a simple idea: writing a good CV should not require fighting with a document editor. You should be able to focus on your experience, see the result immediately, and change the presentation when the job changes."/><div className="hero-actions"><Link className="public-primary" href="/">Open the builder <ArrowRight size={16}/></Link><Link className="public-secondary" href="/services">Work with me</Link></div></section><section className="public-grid three">{[['Write first, design second','Your content stays separate from templates, so changing the look does not mean rebuilding the CV.'],['AI that stays grounded','The writing assistant is told to work from the information you provide rather than filling gaps with made-up claims.'],['Export when it is ready','Review the live A4 page, then prepare a PDF or Word file you can check before sending.'],['Import an existing CV','Bring in a text PDF, DOCX, TXT, Markdown file or an AI CV Builder backup and continue editing.'],['Keep more than one CV','Create separate versions for different roles, industries or seniority levels without overwriting the original.'],['Designed for real screens','The workspace adapts to desktop, tablet and mobile layouts instead of treating a phone as an afterthought.']].map(([title,text])=><article className="public-card" key={title}><CheckCircle2 size={19}/><h2>{title}</h2><p>{text}</p></article>)}</section><section className="public-section-heading"><span className="eyebrow">HOW IT FITS TOGETHER</span><h2>One workflow from rough notes to a finished CV.</h2></section><section className="feature-strip"><div><FileText size={20}/><b>1. Add your information</b><span>Enter your profile, experience, education, skills, projects and other sections in the editor.</span></div><div><LayoutTemplate size={20}/><b>2. Shape the presentation</b><span>Choose a template, adjust typography, spacing, columns, colours and profile-photo placement.</span></div><div><WandSparkles size={20}/><b>3. Refine the wording</b><span>Use the assistant for summaries, experience bullets, skills, job tailoring, cover letters and ATS review.</span></div><div><Download size={20}/><b>4. Check and export</b><span>Inspect the A4 preview and verify the exported file before you send it anywhere.</span></div><div><ShieldCheck size={20}/><b>5. Keep control of your data</b><span>Normal editing is browser-based. AI features only send the text needed for the request to the configured provider.</span></div><div><Sparkles size={20}/><b>6. Keep improving</b><span>Save separate CV versions, update them for new roles and keep your strongest wording ready to reuse.</span></div></section><section className="creator-card"><img src={developer.avatar} alt="Asad Amanat Ali"/><div><span className="eyebrow">CREATOR</span><h2>{developer.name}</h2><p className="creator-title">{developer.title}</p><p>{developer.bio}</p><div className="hero-actions"><Link className="public-secondary" href="/profile">View profile</Link><Link className="public-secondary" href="/contact">Contact</Link></div></div></section><section className="cta-card"><div><span className="eyebrow">KEEP BUILDING</span><h2>A cleaner workspace, with your CV at the centre.</h2><p>The project is developed as a real product: clearer writing, stronger responsive behaviour, safer public APIs and a smoother editing workflow.</p></div><Link className="public-primary" href="/feedback">Share feedback <ArrowRight size={16}/></Link></section></main>}

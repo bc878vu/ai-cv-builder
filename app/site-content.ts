@@ -1,0 +1,4 @@
+const SUPABASE_URL=(process.env.SUPABASE_URL||'https://bewxefxjbvbumajflhfw.supabase.co').replace(/\/$/,'');
+const SUPABASE_KEY=process.env.SUPABASE_ANON_KEY||'sb_publishable_HcJP12XHbtaBbskA8PwJRA_0GS-xNa3';
+export type SiteContent=Record<string,string>;
+export async function getSiteContent(pageKey:string):Promise<SiteContent>{try{const r=await fetch(`${SUPABASE_URL}/rest/v1/site_content?select=content_key,content_value&page_key=eq.${encodeURIComponent(pageKey)}&is_published=eq.true&order=sort_order.asc`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`},next:{revalidate:30,tags:[`site-content:${pageKey}`]}});if(!r.ok)return {};const rows=await r.json() as {content_key:string;content_value:string}[];return Object.fromEntries(rows.map(x=>[x.content_key,x.content_value]))}catch{return {}}}

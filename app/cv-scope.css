@@ -1,0 +1,21 @@
+/* Keep editor-only floating controls out of public, admin and informational pages. */
+.cv-floating-shell,
+.cv-section-handles {
+  display: none !important;
+}
+
+body:has(.paper) .cv-floating-shell,
+body:has(.paper) .cv-section-handles {
+  display: block !important;
+}
+
+body:has(.paper) .cv-floating-shell {
+  position: fixed;
+  z-index: 1200;
+}
+
+@media (max-width: 640px) {
+  body:has(.paper) .cv-floating-shell {
+    max-width: calc(100vw - 16px);
+  }
+}

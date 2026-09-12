@@ -14,6 +14,7 @@ import './cv-interactions.css';
 import './cv-scope.css';
 import './print.css';
 import './admin/admin.css';
+import './admin/analytics.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-cv-builder-six.vercel.app'),

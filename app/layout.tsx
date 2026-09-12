@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import ExportInterceptor from './export-interceptor';
 import SiteChrome from './site-chrome';
 import CVInteractions from './cv-interactions';
+import AnalyticsTracker from './analytics-tracker';
 import './globals.css';
 import './public.css';
 import './public-nav-fix.css';
@@ -25,4 +26,4 @@ export const metadata: Metadata = {
   twitter: { card: 'summary', title: 'AI CV Builder', description: 'Build a professional CV with templates, AI writing and live A4 editing.', images: ['/icon.svg'] },
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#111827' };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body><ExportInterceptor /><SiteChrome /><CVInteractions /><Suspense fallback={<div className="global-loading-fallback"><div className="loading-logo">CV</div><strong>AI CV Builder</strong><span>Preparing your workspace…</span></div>}>{children}</Suspense></body></html> }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body><ExportInterceptor /><SiteChrome /><CVInteractions /><AnalyticsTracker /><Suspense fallback={<div className="global-loading-fallback"><div className="loading-logo">CV</div><strong>AI CV Builder</strong><span>Preparing your workspace…</span></div>}>{children}</Suspense></body></html> }

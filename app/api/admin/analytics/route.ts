@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/app/admin-auth';
+import { requireAdmin } from '../../../admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +25,9 @@ export async function GET() {
     if (!response.ok) return NextResponse.json({ message: 'Unable to load analytics.' }, { status: 500 });
 
     const events = await response.json();
-    const daily = [];
+    const daily: Array<{ date: string; visits: number; uniqueVisitors: number; sessions: number; accounts: number; cvs: number; exports: number }> = [];
     const totals = { visits: 0, uniqueVisitors: 0, sessions: 0, accounts: 0, cvs: 0, exports: 0 };
-    const visitors = new Set();
+    const visitors = new Set<string>();
 
     for (let i = 29; i >= 0; i -= 1) {
       const date = new Date();
@@ -35,7 +35,7 @@ export async function GET() {
       date.setDate(date.getDate() - i);
       const day = date.toISOString().slice(0, 10);
       const item = { date: day, visits: 0, uniqueVisitors: 0, sessions: 0, accounts: 0, cvs: 0, exports: 0 };
-      const dayVisitors = new Set();
+      const dayVisitors = new Set<string>();
 
       for (const event of events.filter((entry: { created_at?: string }) => String(entry.created_at || '').slice(0, 10) === day)) {
         if (event.event_name === 'page_view') {

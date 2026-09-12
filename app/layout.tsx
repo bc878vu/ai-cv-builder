@@ -11,6 +11,7 @@ import './version.css';
 import './editor-polish.css';
 import './cv-studio.css';
 import './cv-interactions.css';
+import './cv-scope.css';
 import './print.css';
 import './admin/admin.css';
 

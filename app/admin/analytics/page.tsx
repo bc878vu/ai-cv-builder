@@ -2,60 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-type Daily = { date: string; visits: number; uniqueVisitors: number; sessions: number; accounts: number; cvs: number; exports: number };
-type Analytics = { range: string; totals: { visits: number; uniqueVisitors: number; sessions: number; accounts: number; cvs: number; exports: number }; daily: Daily[]; topPages: { path: string; visits: number }[] };
+type Daily={date:string;visits:number;uniqueVisitors:number;sessions:number;accounts:number;cvs:number;exports:number};
+type Visitor={visitorId:string;ipAddress:string;city:string;country:string;lastSeen:string;visits:number};
+type Blocked={id:string;ip_address:string;reason:string;created_at:string};
+type Analytics={range:string;totals:{visits:number;uniqueVisitors:number;sessions:number;accounts:number;cvs:number;exports:number};daily:Daily[];topPages:{path:string;visits:number}[];countries:{country:string;visits:number}[];cities:{city:string;visits:number}[];visitors:Visitor[];blocked:Blocked[]};
 
-export default function AdminAnalyticsPage() {
-  const [data, setData] = useState<Analytics | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  async function load() {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch('/api/admin/analytics', { cache: 'no-store' });
-      const payload = await response.json();
-      if (response.status === 401) { window.location.href = '/admin/login'; return; }
-      if (!response.ok) throw new Error(payload.message || 'Analytics unavailable.');
-      setData(payload);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Analytics unavailable.');
-    } finally { setLoading(false); }
-  }
-
-  useEffect(() => { load(); }, []);
-  const maxVisits = useMemo(() => Math.max(1, ...(data?.daily || []).map(item => item.visits)), [data]);
-
-  return <main className="admin-main admin-analytics-page">
-    <style jsx global>{`
-      .admin-analytics-page { min-width: 0; width: 100%; box-sizing: border-box; }
-      .admin-analytics-page .admin-top { max-width: 1180px; margin-inline: auto; }
-      .admin-analytics-page .analytics-content { width: 100%; max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
-      .admin-analytics-page .admin-stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-      .admin-analytics-page .admin-stats article { min-width: 0; }
-      .admin-analytics-page .admin-stats strong { overflow-wrap: anywhere; }
-      .admin-analytics-page .analytics-bars { display: grid; grid-template-columns: repeat(30, minmax(8px, 1fr)); align-items: end; gap: 7px; min-height: 230px; padding: 22px 8px 0; border-bottom: 1px solid #e2e8f0; }
-      .admin-analytics-page .analytics-bar-item { min-width: 0; height: 205px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; }
-      .admin-analytics-page .analytics-bar { width: 100%; max-width: 24px; min-height: 4px; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, #6366f1, #818cf8); transition: height .2s ease; }
-      .admin-analytics-page .analytics-bar-item small { color: #94a3b8; font-size: 9px; writing-mode: vertical-rl; transform: rotate(180deg); }
-      .admin-analytics-page .analytics-note { color: #64748b; font-size: 12px; line-height: 1.6; }
-      .admin-analytics-page .admin-card h2 { margin: 7px 0 0; font-size: 20px; letter-spacing: -.02em; }
-      @media (max-width: 1100px) { .admin-analytics-page .admin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-      @media (max-width: 700px) { .admin-analytics-page { padding: 15px; } .admin-analytics-page .admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .admin-analytics-page .analytics-bars { gap: 3px; min-height: 180px; padding-inline: 0; } .admin-analytics-page .analytics-bar-item { height: 155px; } .admin-analytics-page .analytics-bar-item small { font-size: 8px; } }
-      @media (prefers-reduced-motion: reduce) { .admin-analytics-page .analytics-bar { transition: none; } }
-    `}</style>
-    <header className="admin-top"><div><span className="admin-eyebrow">ADMIN ANALYTICS</span><h1>Visitors &amp; Growth</h1><p className="analytics-note">Privacy-conscious aggregate activity for the last 30 days.</p></div><button className="admin-secondary" onClick={load} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh'}</button></header>
-    <div className="analytics-content">
-      {loading && <section className="admin-card"><p>Loading analytics…</p></section>}
-      {error && <section className="admin-card"><p className="admin-error">{error}</p><p className="analytics-note">Check the Supabase service-role environment variable and redeploy.</p></section>}
-      {data && <>
-        <div className="admin-stats">
-          {Object.entries({ Visits: data.totals.visits, 'Unique visitors': data.totals.uniqueVisitors, Sessions: data.totals.sessions, Accounts: data.totals.accounts, 'CVs created': data.totals.cvs, Exports: data.totals.exports }).map(([label, value]) => <article key={label}><strong>{value.toLocaleString()}</strong><span>{label}</span></article>)}
-        </div>
-        <section className="admin-card"><div className="admin-card-head"><div><span className="admin-eyebrow">TRAFFIC TREND</span><h2>Daily visits</h2></div><span>{data.range}</span></div><div className="analytics-bars" aria-label="Daily visits bar chart">{data.daily.map(item => <div className="analytics-bar-item" key={item.date} title={`${item.date}: ${item.visits} visits`}><div className="analytics-bar" style={{ height: `${Math.max(3, item.visits / maxVisits * 100)}%` }} /><small>{item.date.slice(5)}</small></div>)}</div></section>
-        <section className="admin-card"><span className="admin-eyebrow">TOP PAGES</span><h2>Most visited pages</h2><div className="admin-table-wrap"><table><thead><tr><th>Page</th><th>Visits</th></tr></thead><tbody>{data.topPages.map(page => <tr key={page.path}><td><code>{page.path}</code></td><td>{page.visits.toLocaleString()}</td></tr>)}{!data.topPages.length && <tr><td colSpan={2}>No visits recorded yet.</td></tr>}</tbody></table></div></section>
-      </>}
-    </div>
-  </main>;
+export default function AdminAnalyticsPage(){
+ const [data,setData]=useState<Analytics|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[ip,setIp]=useState(''),[reason,setReason]=useState(''),[search,setSearch]=useState(''),[busy,setBusy]=useState(false);
+ async function load(){setLoading(true);setError('');try{const r=await fetch('/api/admin/analytics',{cache:'no-store'});const p=await r.json();if(r.status===401){location.href='/admin/login';return;}if(!r.ok)throw new Error(p.message||'Analytics unavailable.');setData(p);}catch(e){setError(e instanceof Error?e.message:'Analytics unavailable.');}finally{setLoading(false);}}
+ useEffect(()=>{load();},[]);
+ const maxVisits=useMemo(()=>Math.max(1,...(data?.daily||[]).map(x=>x.visits)),[data]);
+ const visitors=useMemo(()=>data?.visitors.filter(x=>`${x.ipAddress} ${x.city} ${x.country}`.toLowerCase().includes(search.toLowerCase()))||[],[data,search]);
+ async function block(){if(!ip.trim())return;setBusy(true);try{const r=await fetch('/api/admin/blocked-ips',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip_address:ip,reason})});const p=await r.json();if(!r.ok)throw new Error(p.message||'Unable to block IP.');setIp('');setReason('');await load();}catch(e){setError(e instanceof Error?e.message:'Unable to block IP.');}finally{setBusy(false);}}
+ async function unblock(id:string){setBusy(true);try{const r=await fetch('/api/admin/blocked-ips',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});if(!r.ok)throw new Error('Unable to unblock IP.');await load();}catch(e){setError(e instanceof Error?e.message:'Unable to unblock IP.');}finally{setBusy(false);}}
+ return <main className="admin-main admin-analytics-page"><style jsx global>{`.admin-analytics-page{width:100%;min-width:0;box-sizing:border-box}.admin-analytics-page .analytics-content{width:100%;max-width:1440px;margin:auto;display:grid;gap:20px}.admin-analytics-page .admin-top{max-width:1440px;margin:auto}.admin-analytics-page .admin-stats{grid-template-columns:repeat(6,minmax(0,1fr))}.admin-analytics-page .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.admin-analytics-page .analytics-bars{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));align-items:end;gap:6px;min-height:220px;padding:20px 5px 0;border-bottom:1px solid #e2e8f0}.admin-analytics-page .analytics-bar-item{min-width:0;height:190px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}.admin-analytics-page .analytics-bar{width:100%;max-width:26px;min-height:4px;border-radius:7px 7px 2px 2px;background:linear-gradient(180deg,#6366f1,#818cf8)}.admin-analytics-page .analytics-bar-item small{color:#94a3b8;font-size:9px;writing-mode:vertical-rl;transform:rotate(180deg)}.admin-analytics-page .analytics-list-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eef2f7}.admin-analytics-page .analytics-muted{color:#64748b;font-size:13px;line-height:1.6}.admin-analytics-page .analytics-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}.admin-analytics-page .analytics-form label{display:grid;gap:6px;font-size:12px;font-weight:700}.admin-analytics-page .analytics-form input{min-width:0;border:1px solid #dbe3ef;border-radius:10px;padding:10px;background:white}.admin-analytics-page .analytics-table{width:100%;overflow:auto}.admin-analytics-page .analytics-table table{min-width:650px}@media(max-width:1100px){.admin-analytics-page .admin-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.admin-analytics-page{padding:16px}.admin-analytics-page .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-analytics-page .analytics-grid{grid-template-columns:1fr}.admin-analytics-page .analytics-bars{gap:3px;min-height:180px}.admin-analytics-page .analytics-bar-item{height:155px}.admin-analytics-page .analytics-form{grid-template-columns:1fr}.admin-analytics-page .analytics-form button{width:100%}}`}</style><header className="admin-top"><div><span className="admin-eyebrow">ADMIN ANALYTICS</span><h1>Visitors &amp; Growth</h1><p className="analytics-muted">Live activity, visitor geography and security controls for the last 30 days.</p></div><button className="admin-secondary" onClick={load} disabled={loading}>{loading?'Refreshing…':'Refresh data'}</button></header><div className="analytics-content">{loading&&<section className="admin-card"><p>Loading analytics…</p></section>}{error&&<section className="admin-card"><p className="admin-error">{error}</p></section>}{data&&<><div className="admin-stats">{Object.entries({Visits:data.totals.visits,'Unique visitors':data.totals.uniqueVisitors,Sessions:data.totals.sessions,Accounts:data.totals.accounts,'CVs created':data.totals.cvs,Exports:data.totals.exports}).map(([label,value])=><article key={label}><strong>{value.toLocaleString()}</strong><span>{label}</span></article>)}</div><section className="admin-card"><div className="admin-card-head"><div><span className="admin-eyebrow">TRAFFIC TREND</span><h2>Daily visits</h2></div><span>{data.range}</span></div><div className="analytics-bars">{data.daily.map(x=><div className="analytics-bar-item" key={x.date} title={`${x.date}: ${x.visits} visits`}><div className="analytics-bar" style={{height:`${Math.max(3,x.visits/maxVisits*100)}%`}}/><small>{x.date.slice(5)}</small></div>)}</div></section><div className="analytics-grid"><section className="admin-card"><span className="admin-eyebrow">GEOGRAPHY</span><h2>Top countries</h2>{data.countries.map(x=><div className="analytics-list-row" key={x.country}><span>{x.country}</span><b>{x.visits}</b></div>)}{!data.countries.length&&<p className="analytics-muted">No country data yet.</p>}</section><section className="admin-card"><span className="admin-eyebrow">GEOGRAPHY</span><h2>Top cities</h2>{data.cities.map(x=><div className="analytics-list-row" key={x.city}><span>{x.city}</span><b>{x.visits}</b></div>)}{!data.cities.length&&<p className="analytics-muted">No city data yet.</p>}</section></div><section className="admin-card"><span className="admin-eyebrow">TOP PAGES</span><h2>Most visited pages</h2><div className="analytics-table"><table><thead><tr><th>Page</th><th>Visits</th></tr></thead><tbody>{data.topPages.map(x=><tr key={x.path}><td><code>{x.path}</code></td><td>{x.visits}</td></tr>)}</tbody></table></div></section><section className="admin-card"><div className="admin-card-head"><div><span className="admin-eyebrow">VISITOR DIRECTORY</span><h2>Recent visitors</h2></div><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search IP, city or country" aria-label="Search visitors"/></div><p className="analytics-muted">Restricted to authenticated administrators.</p><div className="analytics-table"><table><thead><tr><th>IP address</th><th>City</th><th>Country</th><th>Visits</th><th>Last seen</th></tr></thead><tbody>{visitors.map(x=><tr key={x.visitorId}><td><code>{x.ipAddress}</code></td><td>{x.city}</td><td>{x.country}</td><td>{x.visits}</td><td>{x.lastSeen?new Date(x.lastSeen).toLocaleString():'—'}</td></tr>)}{!visitors.length&&<tr><td colSpan={5}>No visitor details yet.</td></tr>}</tbody></table></div></section><section className="admin-card"><span className="admin-eyebrow">SECURITY CONTROL</span><h2>Block visitor IP</h2><p className="analytics-muted">Blocked IPs stop analytics collection and can be removed here.</p><div className="analytics-form"><label>IP address<input value={ip} onChange={e=>setIp(e.target.value)} placeholder="203.0.113.10"/></label><label>Reason<input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Spam or abuse"/></label><button className="admin-primary" disabled={busy||!ip.trim()} onClick={block}>Block IP</button></div><div className="analytics-table"><table><thead><tr><th>IP address</th><th>Reason</th><th>Created</th><th></th></tr></thead><tbody>{data.blocked.map(x=><tr key={x.id}><td><code>{x.ip_address}</code></td><td>{x.reason||'—'}</td><td>{new Date(x.created_at).toLocaleString()}</td><td><button className="admin-secondary" disabled={busy} onClick={()=>unblock(x.id)}>Unblock</button></td></tr>)}{!data.blocked.length&&<tr><td colSpan={4}>No blocked IPs.</td></tr>}</tbody></table></div></section></>}</div></main>;
 }

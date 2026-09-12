@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '../../../admin-auth';
+import { requireAdmin } from '@/app/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +37,7 @@ export async function GET() {
       const item = { date: day, visits: 0, uniqueVisitors: 0, sessions: 0, accounts: 0, cvs: 0, exports: 0 };
       const dayVisitors = new Set();
 
-      for (const event of events.filter((entry) => String(entry.created_at || '').slice(0, 10) === day)) {
+      for (const event of events.filter((entry: { created_at?: string }) => String(entry.created_at || '').slice(0, 10) === day)) {
         if (event.event_name === 'page_view') {
           item.visits += 1;
           if (event.visitor_id) {
@@ -61,7 +61,7 @@ export async function GET() {
     totals.cvs = daily.reduce((sum, item) => sum + item.cvs, 0);
     totals.exports = daily.reduce((sum, item) => sum + item.exports, 0);
 
-    const pageCounts = {};
+    const pageCounts: Record<string, number> = {};
     for (const event of events) {
       if (event.event_name === 'page_view' && event.path) pageCounts[event.path] = (pageCounts[event.path] || 0) + 1;
     }

@@ -29,6 +29,11 @@
     print-color-adjust: exact !important;
   }
 
+  /* Cover letter vs CV: print only the active document */
+  body[data-print-doc="letter"] .paper.cv-paper { display: none !important; }
+  body[data-print-doc="cv"] .paper.cover-letter { display: none !important; }
+  .paper.cover-letter { transform: none !important; }
+
   .topbar,
   .sidebar,
   .tabs,

@@ -71,7 +71,6 @@
     padding: 14mm 14mm 16mm !important;
     transform: none !important;
     box-shadow: none !important;
-    border: 0 !important;
     border-radius: 0 !important;
     overflow: visible !important;
     break-before: auto !important;
@@ -128,5 +127,9 @@
   .paper.inline-editing [contenteditable] {
     outline: none !important;
     background: none !important;
+  }
+
+  .paper {
+    transform: none !important;
   }
 }

@@ -2,24 +2,20 @@
 
 import { useEffect } from 'react';
 
-function downloadBlob(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function safeFileName() {
-  return (document.querySelector('.resume-head h1')?.textContent || 'cv')
-    .replace(/[^a-z0-9]+/gi, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase() || 'cv';
-}
-
+/**
+ * Export helper: configures the PDF.js worker used by CV file import.
+ *
+ * NOTE (2026-09-30): this component previously intercepted PDF/DOCX button
+ * clicks and re-routed them through html2pdf.js / dom-docx. That broke both
+ * exports:
+ *  - PDF: html2canvas cannot parse the `color-mix()` used in the resume CSS,
+ *    so rendering threw and the leftover `.html2pdf__overlay` covered the
+ *    whole viewport, bricking the page until reload.
+ *  - DOCX: dom-docx failures were swallowed by `.catch(()=>undefined)` and
+ *    the interception blocked the working `docx`-library builder.
+ * PDF now uses window.print() + print.css (reliable, selectable text =
+ * genuinely ATS-friendly) and DOCX uses the `docx` builder in page.tsx.
+ */
 export default function ExportInterceptor() {
   useEffect(() => {
     let disposed = false;
@@ -31,67 +27,17 @@ export default function ExportInterceptor() {
       })
       .catch(() => undefined);
 
-    const exportPDF = async () => {
-      const paper = document.querySelector('.paper') as HTMLElement | null;
-      if (!paper) return;
-      const mod: any = await import('html2pdf.js');
-      const html2pdf = mod.default || mod;
-      const worker = html2pdf().set({
-        margin: 0,
-        filename: `${safeFileName()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.resume-section', '.avatar'] },
-      }).from(paper);
-
-      await worker.toPdf().get('pdf').then((pdf: any) => {
-        const total = pdf.internal.getNumberOfPages();
-        pdf.setFontSize(8);
-        pdf.setTextColor(100, 116, 139);
-        for (let page = 1; page <= total; page += 1) {
-          pdf.setPage(page);
-          pdf.text(`Page ${page} of ${total}`, 105, 291, { align: 'center' });
-        }
-      });
-      await worker.save();
+    // Safety net: remove any stale html2pdf overlay left behind by older
+    // cached clients so it can never brick the page again.
+    const cleanup = () => {
+      document.querySelectorAll('.html2pdf__overlay').forEach((el) => el.remove());
     };
+    cleanup();
+    const timer = window.setInterval(cleanup, 5000);
 
-    const exportDOCX = async () => {
-      const paper = document.querySelector('.paper') as HTMLElement | null;
-      if (!paper) return;
-      const { convertHtmlToDocx } = await import('dom-docx/browser');
-      const blob = await convertHtmlToDocx(paper.innerHTML, {
-        pageSize: 'A4',
-        orientation: 'portrait',
-        styleSource: 'computed',
-        root: paper,
-        margins: { top: 0.55, right: 0.55, bottom: 0.55, left: 0.55 },
-        metadata: { title: document.querySelector('.resume-head h1')?.textContent || 'CV', creator: 'AI CV Builder' },
-      });
-      downloadBlob(blob, `${safeFileName()}.docx`);
-    };
-
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const button = target?.closest('button');
-      if (!button) return;
-      const label = (button.textContent || '').trim().toUpperCase();
-      if (label.includes('PDF')) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        exportPDF().catch(() => window.print());
-      } else if (label.includes('DOCX')) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        exportDOCX().catch(() => undefined);
-      }
-    };
-
-    document.addEventListener('click', onClick, true);
     return () => {
       disposed = true;
-      document.removeEventListener('click', onClick, true);
+      window.clearInterval(timer);
     };
   }, []);
 

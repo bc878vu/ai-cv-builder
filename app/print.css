@@ -33,7 +33,11 @@
   .sidebar,
   .tabs,
   .preview-toolbar,
+  .inline-hint,
   .cv-floating-tools,
+  .cv-floating-shell,
+  .cv-section-handles,
+  .public-dock,
   .bottom-dock {
     display: none !important;
   }
@@ -119,5 +123,10 @@
 
   img {
     break-inside: avoid-page;
+  }
+
+  .paper.inline-editing [contenteditable] {
+    outline: none !important;
+    background: none !important;
   }
 }
